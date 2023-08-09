@@ -15,7 +15,7 @@ from qiskit.exceptions import QiskitError
 from qiskit_ibm_provider.ibm_qubit_properties import IBMQubitProperties
 from qiskit.circuit.library import XGate, RZGate, SXGate, CXGate, ECRGate, IGate, CZGate, ECRGate, YGate, iSwapGate, U1Gate, UGate, U2Gate, U3Gate, SGate, TGate, SwapGate
 from qiskit.circuit import Measure, Parameter, Delay, Reset
-from qiskit.compiler.transpiler import target_to_backend_properties, CouplingMap
+from qiskit.compiler.transpiler import target_to_backend_properties
 
 
 # TODO: Make BackendSpec.new_backend() work with parameter gates
@@ -46,6 +46,17 @@ class BackendSpec:
 
         elif "fake" in parent.name.lower():
             self.false = True
+            self._load_IBM(parent)
+            self.coupling_type = 'hexagonal'
+            self._load_fake_data(parent.target)
+            self._load_edges(self.coupling_map.graph)
+            self._tuple_remover()
+
+            self._gen_flag_df()
+            del self.parent
+            del self.false
+            return
+
             
         if isinstance(parent, BackendV2):
             self._load_IBM(parent)
@@ -178,6 +189,56 @@ class BackendSpec:
 
         self.gate_props_df = gate_prop_holder
 
+    def _load_fake_data(self, target):
+    
+        gate_props = pd.DataFrame(columns = ['gate', 'qubits', 'gate_error', 'gate_length'])
+        for name in target:
+            if name == 'measure':
+                continue
+            
+            gate_keys = target[name].keys()
+            gate_vals = target[name].values()
+            temp_df = None
+            if name in self.two_qubit_lut:
+                temp_df = pd.DataFrame({
+                    'gate': [name] * len(gate_vals),
+                    'qubits': gate_keys,
+                    'gate_error': map(lambda x: x.error, gate_vals),
+                    'gate_length':map(lambda x: x.duration, gate_vals)
+                })
+
+            else:
+                temp_df = pd.DataFrame({
+                    'gate': [name] * target.num_qubits,
+                    'qubits': map(lambda x: x[0], gate_keys),
+                    'gate_error': map(lambda x: x.error, gate_vals),
+                    'gate_length':map(lambda x: x.duration, gate_vals)
+                })
+
+            gate_props = pd.concat([gate_props, temp_df], ignore_index = True, sort = False)
+        self.gate_props_df = gate_props
+
+        t1 = [None] * target.num_qubits
+        t2 = [None] * target.num_qubits
+        freq = [None] * target.num_qubits
+        anharm = [None] * target.num_qubits
+        i = 0
+        for i in range(target.num_qubits):
+            t1[i] = target.qubit_properties[i].t1
+            t2[i] = target.qubit_properties[i].t2
+            freq[i] = target.qubit_properties[i].frequency
+            anharm[i] = target.qubit_properties[i].anharmonicity
+
+
+
+        self.qubit_props_df = pd.DataFrame({
+            'T1': t1,
+            'T2': t2,
+            'frequency': freq,
+            'anharmonicity': anharm,
+            'readout_error': map(lambda x: x.error, target['measure'].values()),
+            'readout_length': map(lambda x: x.duration, target['measure'].values())
+        })
 
 
     def _load_edges(self, graph):
@@ -210,14 +271,15 @@ class BackendSpec:
         self.qubit_props_df, self.gate_props_df = self._sample_props()
         self._gen_flag_df()
 
-
+    def set_bidirectional(self, bidirectional):
+        self.bidirectional = bidirectional
 
     def set_qubit_property(self, qubit, qubit_property, value):
         self.qubit_props_df[qubit_property][qubit] = value
 
     def set_qubit_properties(self, qubits, qubit_property, values):
        for i in qubits:
-           self.qubit_props_df[qubit_property][i] = values[i]
+           self.qubit_props_df[qubit_property][qubits[i]] = values[i]
 
     def set_gate_properties(self, gate_name, gate_property, values):
         temp_df = self.gate_props_df[self.gate_props_df.gate == gate_name]
@@ -372,7 +434,7 @@ class BackendSpec:
             row = math.ceil(np.sqrt(num_qubits))
             col = math.ceil(num_qubits/row)
 
-            grid_map = updated_map.from_grid(row, col, bidirectional=False)
+            grid_map = updated_map.from_grid(row, col, bidirectional=self.bidirectional)
             graph = grid_map.graph
 
             rgb = grid_map.draw()
@@ -381,7 +443,7 @@ class BackendSpec:
 
         elif (coupling_type == 'ata'):
 
-            ata_map = updated_map.from_full(num_qubits, bidirectional=False)
+            ata_map = updated_map.from_full(num_qubits, bidirectional=self.bidirectional)
             graph = ata_map.graph
             rgb = ata_map.draw()
             rgb = rgb.convert("RGB")
@@ -441,13 +503,13 @@ class BackendSpec:
             row = math.ceil(np.sqrt(num_qubits))
             col = math.ceil(num_qubits/row)
 
-            grid_map = updated_map.from_grid(row, col, bidirectional=False)
+            grid_map = updated_map.from_grid(row, col, bidirectional=self.bidirectional)
             graph = grid_map.graph
 
     
             
         elif (coupling_type == 'ata'):
-            ata_map = updated_map.from_full(num_qubits, bidirectional=False)
+            ata_map = updated_map.from_full(num_qubits, bidirectional=self.bidirectional)
             updated_map = ata_map
         
         else:
