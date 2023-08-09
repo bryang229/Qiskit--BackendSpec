@@ -13,7 +13,7 @@ from qiskit.providers.backend import BackendV2
 from qiskit.providers.options import Options
 from qiskit.exceptions import QiskitError
 from qiskit_ibm_provider.ibm_qubit_properties import IBMQubitProperties
-from qiskit.circuit.library import XGate, RZGate, SXGate, CXGate, ECRGate, IGate, CZGate, ECRGate, YGate, iSwapGate, U1Gate, UGate, U2Gate, U3Gate, SGate, TGate, SwapGate
+from qiskit.circuit.library import XGate, RZGate, SXGate, CXGate, ECRGate, IGate, CZGate, ECRGate, YGate, iSwapGate, U1Gate, UGate, U2Gate, U3Gate, SGate, TGate, SwapGate, PhaseGate
 from qiskit.circuit import Measure, Parameter, Delay, Reset
 from qiskit.compiler.transpiler import target_to_backend_properties
 
@@ -947,6 +947,7 @@ class BackendSpec:
                 't': TGate,
                 'u' : UGate,
                 'u1': U1Gate,
+                'p': PhaseGate,
                 'u2': U2Gate,
                 'u3': U3Gate,
                 'rz': RZGate,
@@ -974,6 +975,16 @@ class BackendSpec:
             gate_called = None
             if gate == 'rz':
                 gate_called = gate_class(Parameter('theta'))
+            elif gate == 'u':
+                gate_called = gate_class(Parameter('theta'), Parameter('phi'), Parameter('lambda'))
+            elif gate == 'u1':
+                gate_called = gate_class(Parameter('theta'))
+            elif gate == 'p':
+                gate_called = gate_class(Parameter('theta'))
+            elif gate == 'u2':
+                gate_called = gate_class(Parameter('theta'), Parameter('phi'))
+            elif gate == 'u3':
+                gate_called = gate_class(Parameter('theta'), Parameter('phi'), Parameter('lambda'))
             else:
                 gate_called = gate_class()
 
