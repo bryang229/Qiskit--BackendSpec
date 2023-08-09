@@ -10,5 +10,5 @@ qc.h(1)
 
 backend = spec.new_backend()
 
-transpiled = transpile(qc, backend)
+transpiled = transpile(qc, backend, basis_gates=spec.basis_gates)
 
