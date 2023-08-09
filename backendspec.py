@@ -128,9 +128,8 @@ class BackendSpec:
 
     def _load_IBM(self,parent):
         if self.false:
-          self.basis_gates = ['id', 'rz', 'sx', 'x', 'cx', 'reset'] 
           self.properties =  target_to_backend_properties(parent.target)
-        
+          self.basis_gates = list(self.properties._gates.keys())
         else:
           self.basis_gates = parent.basis_gates
           if 'reset' not in parent.basis_gates:
@@ -149,7 +148,6 @@ class BackendSpec:
 
 
     def _load_data(self):
-
         qubit_props = self.properties._qubits #loading qubit props
         
         qubit_props_df = pd.DataFrame(data=qubit_props)
