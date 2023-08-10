@@ -345,7 +345,7 @@ class BackendSpec:
         return qubit_indices
 
 
-    def from_backend(self, parent : Union[Backend, BackendV2])# Union[qiskit.providers.Backend, qiskit.providers.BackendV2]):
+    def from_backend(self, parent : Union[Backend, BackendV2]):
         self.__init__(parent)
         
  # Modifiers
