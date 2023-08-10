@@ -24,7 +24,7 @@ pd.options.mode.chained_assignment = None  # default='warn'
 
 
 class BackendSpec:
-    def __init__(self, parent=None):
+    def __init__(self, parent: Union[FakeBackendV2, Backend, BackendV2]=None):
         
         self._seed = np.random.randint(10000000,300000000)
         np.random.seed(self._seed)
@@ -49,7 +49,7 @@ class BackendSpec:
             self._load_edges(self._coupling_map.graph)
             self._tuple_remover()
 
-            self._gen_flag_df()
+            self._gen_flag()
             del self.parent
             del self.false
             return
@@ -63,7 +63,7 @@ class BackendSpec:
         self._load_edges(self._coupling_map.graph)
         self._tuple_remover()
 
-        self._gen_flag_df()
+        self._gen_flag()
         del self.parent
         del self.properties
         del self.false
@@ -99,7 +99,7 @@ class BackendSpec:
         self._dt = 0
         self._dtm = 0
         self._bidirectional = True
-        self._gen_flag_df()
+        self._gen_flag()
 
         return
 
@@ -345,7 +345,7 @@ class BackendSpec:
         return qubit_indices
 
 
-    def from_backend(self, parent : Union[Backend, BackendV2]):
+    def from_backend(self, parent : Union[Backend, BackendV2, FakeBackendV2]):
         self.__init__(parent)
         
  # Modifiers
@@ -444,7 +444,7 @@ class BackendSpec:
         self._num_qubits = updated_map.size()
             
         self._qubit_properties, self._gate_properties = self._sample_props()
-        self._gen_flag_df()
+        self._gen_flag()
 
         return rgb
     
@@ -530,7 +530,6 @@ class BackendSpec:
             temp_df = self._gate_flag[self._gate_flag.gate == gate_name]
             temp_df[prop_key] = [flag] * len(temp_df[prop_key])
             self._gate_flag.update(temp_df)
-            return True
         except:
             raise KeyError(f"Gate: {gate_name} with property: {prop_key} not found")
 
@@ -575,26 +574,32 @@ class BackendSpec:
         self._num_qubits = coupling_map.size()
         
         self._qubit_properties, self._gate_properties = self._sample_props()
-        self._gen_flag_df()
+        self._gen_flag()
 
     def set_bidirectional(self, bidirectional: bool):
         self._bidirectional = bidirectional
 
-    def set_qubit_property(self, qubit: int, qubit_property: str, value: float):
+    def set_qubit_property(self, qubit: int, qubit_property: str, value: float, set_static_flag : bool = False ):
         self._qubit_properties[qubit_property][qubit] = value
+        if set_static_flag:
+            self.set_flag_qubit_property(True, qubit_property, qubit)
 
-    def set_qubit_properties(self, qubits: list[int], qubit_property: str, values: list[Union[int, float]]):
+    def set_qubit_properties(self, qubits: list[int], qubit_property: str, values: list[Union[int, float]], set_static_flag :bool = False):
        for i in qubits:
            self._qubit_properties[qubit_property][qubits[i]] = values[i]
+       if set_static_flag:
+            self.set_flag_qubits_property(True, qubit_property, qubits)
 
-    def set_gate_properties(self, gate_name: str, gate_property: str, values: list[Union[int, float]]):
+    def set_gate_properties(self, gate_name: str, gate_property: str, values: list[Union[int, float]], set_static_flag: bool = False):
         temp_df = self._gate_properties[self._gate_properties.gate == gate_name]
         temp_df[gate_property].values[:] = values
         
         self._gate_properties.update(temp_df)
 
+        if set_static_flag:
+            self.set_flag_gates_property(True, gate_name, gate_property)
 
-    def set_gate_property(self, gate_name: str, gate_property: str, qubits: Union[int, tuple[int, int]], value: list[Union[int, float]]):
+    def set_gate_property(self, gate_name: str, gate_property: str, qubits: Union[int, tuple[int, int]], value: list[Union[int, float]], set_static_flag: bool = False):
         temp_df = pd.DataFrame(self._gate_properties)
         temp_df = temp_df[temp_df["gate"] == gate_name]
         if gate_name not in self._two_qubit_lut:  # case for any gate other than cx
@@ -605,14 +610,25 @@ class BackendSpec:
         property_index = temp_df.index[0]
         self._gate_properties[gate_property][property_index] = value
 
-    def set_gate_properties_dist(self,gate_name: str, prop_key: str, std: float, mean: float):
-        count = len(self._edge_list) if gate_name in self._two_qubit_lut else self._num_qubits
-        vals = self.sample_dist(std, mean, count)
-        self.set_gate_properties(gate_name, prop_key, vals)
+        if set_static_flag:
+            self.set_flag_gate_property(True, gate_name, gate_property, qubits)
 
-    def set_qubits_properties_dist(self,qubits: list[int],  prop_key: str, std: float, mean: float):
-        vals = self.sample_dist(std, mean, self._num_qubits)
-        self.set_qubit_properties(qubits, prop_key, vals)
+    def set_gate_properties_distribution(self,gate_name: str, gate_property: str, std: float, mean: float, set_static_flag : bool = False):
+        count = len(self._edge_list) if gate_name in self._two_qubit_lut else self._num_qubits
+        vals = self.sample_distribution(std, mean, count)
+        self.set_gate_properties(gate_name, gate_property, vals)
+
+        if set_static_flag:
+            self.set_flag_gates_property(True, gate_name, gate_property)
+
+    def set_qubits_properties_distribution(self, qubits: list[int],  gate_property: str, std: float, mean: float, set_static_flag: bool = False):
+        vals = self.sample_distribution(std, mean, self._num_qubits)
+        self.set_qubit_properties(qubits, gate_property, vals)
+
+        if set_static_flag:
+            for qubit in qubits:
+                self.set_flag_qubit_property(True,qubit,  gate_property, qubits)
+
 
     def set_max_circuits(self, max_circuits: int):
         self._max_circuits = max_circuits
@@ -620,18 +636,18 @@ class BackendSpec:
     def set_dt(self, dt: float):
         self._dt = dt
 
-    # dist_xxx => [std_xxx, mean_xxx]
+    # distribution_xxx => [std_xxx, mean_xxx]
 
     # Methods for basis gates
         
-    def add_basis_gate_dist(self, new_gate : str, dist_error : int, dist_length : int):
+    def add_basis_gate_distribution(self, new_gate : str, distribution_error : list[float, float], distribution_length : list[float, float]):
         if new_gate in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {new_gate}")
         elif new_gate in self._basis_gates:
             raise AttributeError(f"You already have {new_gate} as a basis gate.")
         gates = [new_gate] * self._num_qubits
-        error_vals = self.sample_dist(dist_error[0], dist_error[1], self._num_qubits)
-        length_vals = self.sample_dist(dist_length[0], dist_length[1], self._num_qubits)
+        error_vals = self.sample_distribution(distribution_error[0], distribution_error[1], self._num_qubits)
+        length_vals = self.sample_distribution(distribution_length[0], distribution_length[1], self._num_qubits)
 
         temp_df = pd.DataFrame({"gate": gates,
                                 "qubits": range(self._num_qubits),
@@ -646,7 +662,7 @@ class BackendSpec:
         self._basis_gates.append(new_gate) 
         self._gate_flag = pd.concat((self._gate_flag, temp_df), ignore_index= True, sort= False)
     
-    def add_basis_gate_numeric(self, gate_name : str, error_vals : int, length_vals : int):
+    def add_basis_gate_numeric(self, gate_name : str, error_vals : list[float], length_vals : list[float]):
         if gate_name in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {gate_name}")
         elif len(length_vals) != self._num_qubits != len(error_vals):
@@ -702,7 +718,7 @@ class BackendSpec:
         self._basis_gates.pop(index)
         self._basis_gates.append(new_gate)
 
-    def swap_basis_gate_dist(self, old_gate : str, new_gate : str, dist_error : int, dist_length : int):
+    def swap_basis_gate_distribution(self, old_gate : str, new_gate : str, distribution_error : list[float, float], distribution_length : list[float, float]):
         if new_gate in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {new_gate}")
         elif old_gate in self._two_qubit_lut:
@@ -712,10 +728,10 @@ class BackendSpec:
         elif new_gate in self._basis_gates:
             raise AttributeError(f"You already have {new_gate} as a basis gate.")
         self.remove_basis_gate(old_gate)
-        self.add_basis_gate_dist(new_gate, dist_error, dist_length)
+        self.add_basis_gate_distribution(new_gate, distribution_error, distribution_length)
 
 
-    def swap_basis_gate_numeric(self, old_gate : str, new_gate : str, error_vals : int, length_vals : int):
+    def swap_basis_gate_numeric(self, old_gate : str, new_gate : str, error_vals : list[float], length_vals : list[float]):
         if new_gate in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {new_gate}")
         elif old_gate in self._two_qubit_lut:
@@ -750,7 +766,7 @@ class BackendSpec:
         self._basis_gates.append(new_gate)
 
 
-    def swap_2q_basis_gate_dist(self, old_gate : str, new_gate : str, dist_error : int, dist_length : int):
+    def swap_2q_basis_gate_distribution(self, old_gate : str, new_gate : str, distribution_error : list[float, float], distribution_length : list[float, float]):
         if old_gate not in self._basis_gates:
             raise LookupError(f"{old_gate} is not in the basis gates.")
         elif old_gate not in self._two_qubit_lut:
@@ -766,8 +782,8 @@ class BackendSpec:
         count = len(replace)
         gate = [new_gate] * count
 
-        gate_error = self.sample_dist(dist_error[0], dist_error[1], count)
-        gate_length = self.sample_dist(dist_length[0], dist_length[1], count)
+        gate_error = self.sample_distribution(distribution_error[0], distribution_error[1], count)
+        gate_length = self.sample_distribution(distribution_length[0], distribution_length[1], count)
 
         self._gate_properties.drop(replace.index)
         self._gate_flag.drop(replace.index)
@@ -787,7 +803,7 @@ class BackendSpec:
         self._basis_gates.append(new_gate)
 
     
-    def swap_2q_basis_gate_numeric(self, old_gate : str, new_gate : str, gate_error : int, gate_length : int):
+    def swap_2q_basis_gate_numeric(self, old_gate : str, new_gate : str, gate_error : list[float], gate_length : list[float]):
         if old_gate not in self._basis_gates:
             raise LookupError(f"{old_gate} is not in the basis gates.")
         elif old_gate not in self._two_qubit_lut:
@@ -824,7 +840,7 @@ class BackendSpec:
 
 ### Flagging for static values
 
-    def _gen_flag_df(self):
+    def _gen_flag(self):
         qubit_flag = self._qubit_properties.copy()
         gate_flag = self._gate_properties.copy()
 
@@ -839,7 +855,7 @@ class BackendSpec:
         self._gate_flag = gate_flag
 
 
-    def _apply_flags(self, dfs : pd.DataFrame):
+    def _apply_flags(self, dfs : pd.DataFrame) -> list[np.ndarray, np.ndarray]:
         qubit_df = dfs[0]
         gate_df = dfs[1]
         for col in qubit_df.columns:
@@ -855,7 +871,7 @@ class BackendSpec:
 
 
 ### Samplers
-    def _sample_props(self):
+    def _sample_props(self) -> list[np.ndarray, np.ndarray]:
 
         qubit_df = pd.DataFrame()
         i = 0
@@ -887,7 +903,7 @@ class BackendSpec:
 
         return qubit_df, gate_df
 
-    def _sample_gates(self, gate : str, prop_key : str, sample_count : int): 
+    def _sample_gates(self, gate : str, prop_key : str, sample_count : int) -> np.ndarray: 
         mini_df = self._gate_properties.loc[self._gate_properties['gate'] == gate]
 
         data = mini_df[prop_key]
@@ -910,7 +926,7 @@ class BackendSpec:
         return sample_output # returns a pd series (or does it have to be a df?)
 
 
-    def _sample_qubits(self, prop_key : str, sample_count : int): # never mind i need backendspec
+    def _sample_qubits(self, prop_key : str, sample_count : int) -> np.ndarray: # never mind i need backendspec
 
         """
       The method signature of this function follows: normal_distribution(self, error_type)
@@ -950,7 +966,7 @@ class BackendSpec:
 
         return sample_output # returns a pd series (or does it have to be a df?)
     
-    def sample_dist(self, std : int, mean : int, count : int):
+    def sample_distribution(self, std : int, mean : int, count : int) -> np.ndarray:
         distribution = stats.norm(
             loc=mean,
             scale=std
@@ -966,7 +982,7 @@ class BackendSpec:
 
 ### New backend generation code
 
-    def _gen_target(self, qubits_df : pd.DataFrame):
+    def _gen_target(self, qubits_df : pd.DataFrame) -> Target:
         # qubits_df = self._qubit_properties
         num_qubits = self._num_qubits
         _target = Target(
@@ -984,7 +1000,7 @@ class BackendSpec:
             )
         return _target
 
-    def _gen_inst_props(self, props : pd.DataFrame):
+    def _gen_inst_props(self, props : pd.DataFrame) -> pd.DataFrame:
 #  YGate, iSwapGate, U1Gate, UGate, U2Gate, U3Gate, SGate, TGate
         gates_lut = {
                 'x': XGate,
@@ -1068,7 +1084,7 @@ class BackendSpec:
         return inst_dict
 
 
-    def new_backend(self):
+    def new_backend(self) -> FakeBackendV2:
         test_backend = FakeBackendV2()
         test_backend._coupling_map = self._coupling_map
 
