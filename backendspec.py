@@ -624,7 +624,7 @@ class BackendSpec:
 
     # Methods for basis gates
         
-    def add_basis_gate_dist(self, new_gate, dist_error, dist_length):
+    def add_basis_gate_dist(self, new_gate : str, dist_error : int, dist_length : int):
         if new_gate in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {new_gate}")
         elif new_gate in self._basis_gates:
@@ -646,7 +646,7 @@ class BackendSpec:
         self._basis_gates.append(new_gate) 
         self._gate_flag = pd.concat((self._gate_flag, temp_df), ignore_index= True, sort= False)
     
-    def add_basis_gate_numeric(self, gate_name, error_vals, length_vals):
+    def add_basis_gate_numeric(self, gate_name : str, error_vals : int, length_vals : int):
         if gate_name in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {gate_name}")
         elif len(length_vals) != self._num_qubits != len(error_vals):
@@ -670,7 +670,7 @@ class BackendSpec:
         self._gate_flag = pd.concat((self._gate_flag, temp_df), ignore_index= True, sort= False)
         self._basis_gates.append(gate_name)
 
-    def remove_basis_gate(self, gate_name):
+    def remove_basis_gate(self, gate_name : str):
         if gate_name not in self._basis_gates:
             raise LookupError(f"{gate_name} is not in the basis gates.")
         remove = self._gate_properties.loc[self._gate_properties.gate == gate_name].index
@@ -682,7 +682,7 @@ class BackendSpec:
         index = self._basis_gates.index(gate_name)
         self._basis_gates.pop(index)
 
-    def swap_basis_gate(self, old_gate, new_gate):
+    def swap_basis_gate(self, old_gate : str, new_gate : str):
         if new_gate in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {new_gate}")
         elif old_gate in self._two_qubit_lut:
@@ -702,7 +702,7 @@ class BackendSpec:
         self._basis_gates.pop(index)
         self._basis_gates.append(new_gate)
 
-    def swap_basis_gate_dist(self, old_gate, new_gate, dist_error, dist_length):
+    def swap_basis_gate_dist(self, old_gate : str, new_gate : str, dist_error : int, dist_length : int):
         if new_gate in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {new_gate}")
         elif old_gate in self._two_qubit_lut:
@@ -715,7 +715,7 @@ class BackendSpec:
         self.add_basis_gate_dist(new_gate, dist_error, dist_length)
 
 
-    def swap_basis_gate_numeric(self, old_gate, new_gate, error_vals, length_vals):
+    def swap_basis_gate_numeric(self, old_gate : str, new_gate : str, error_vals : int, length_vals : int):
         if new_gate in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {new_gate}")
         elif old_gate in self._two_qubit_lut:
@@ -729,7 +729,7 @@ class BackendSpec:
         self.remove_basis_gate(old_gate)
         self.add_basis_gate_numeric(new_gate, error_vals, length_vals)
     
-    def swap_2q_basis_gate(self, old_gate, new_gate):
+    def swap_2q_basis_gate(self, old_gate : str, new_gate : str):
         if old_gate not in self._basis_gates:
             raise LookupError(f"{old_gate} is not in the basis gates.")
         elif old_gate not in self._two_qubit_lut:
@@ -750,7 +750,7 @@ class BackendSpec:
         self._basis_gates.append(new_gate)
 
 
-    def swap_2q_basis_gate_dist(self, old_gate, new_gate, dist_error, dist_length):
+    def swap_2q_basis_gate_dist(self, old_gate : str, new_gate : str, dist_error : int, dist_length : int):
         if old_gate not in self._basis_gates:
             raise LookupError(f"{old_gate} is not in the basis gates.")
         elif old_gate not in self._two_qubit_lut:
@@ -787,7 +787,7 @@ class BackendSpec:
         self._basis_gates.append(new_gate)
 
     
-    def swap_2q_basis_gate_numeric(self, old_gate, new_gate, gate_error, gate_length):
+    def swap_2q_basis_gate_numeric(self, old_gate : str, new_gate : str, gate_error : int, gate_length : int):
         if old_gate not in self._basis_gates:
             raise LookupError(f"{old_gate} is not in the basis gates.")
         elif old_gate not in self._two_qubit_lut:
@@ -820,6 +820,8 @@ class BackendSpec:
         self._basis_gates.pop(index)
         self._basis_gates.append(new_gate)
 
+        # stop here for typing
+
 ### Flagging for static values
 
     def _gen_flag_df(self):
@@ -837,7 +839,7 @@ class BackendSpec:
         self._gate_flag = gate_flag
 
 
-    def _apply_flags(self, dfs):
+    def _apply_flags(self, dfs : pd.DataFrame):
         qubit_df = dfs[0]
         gate_df = dfs[1]
         for col in qubit_df.columns:
@@ -885,7 +887,7 @@ class BackendSpec:
 
         return qubit_df, gate_df
 
-    def _sample_gates(self, gate, prop_key, sample_count): 
+    def _sample_gates(self, gate : str, prop_key : str, sample_count : int): 
         mini_df = self._gate_properties.loc[self._gate_properties['gate'] == gate]
 
         data = mini_df[prop_key]
@@ -908,7 +910,7 @@ class BackendSpec:
         return sample_output # returns a pd series (or does it have to be a df?)
 
 
-    def _sample_qubits(self, prop_key, sample_count): # never mind i need backendspec
+    def _sample_qubits(self, prop_key : str, sample_count : int): # never mind i need backendspec
 
         """
       The method signature of this function follows: normal_distribution(self, error_type)
@@ -948,7 +950,7 @@ class BackendSpec:
 
         return sample_output # returns a pd series (or does it have to be a df?)
     
-    def sample_dist(self, std, mean, count):
+    def sample_dist(self, std : int, mean : int, count : int):
         distribution = stats.norm(
             loc=mean,
             scale=std
@@ -964,7 +966,7 @@ class BackendSpec:
 
 ### New backend generation code
 
-    def _gen_target(self, qubits_df):
+    def _gen_target(self, qubits_df : pd.DataFrame):
         # qubits_df = self._qubit_properties
         num_qubits = self._num_qubits
         _target = Target(
@@ -982,7 +984,7 @@ class BackendSpec:
             )
         return _target
 
-    def _gen_inst_props(self, props):
+    def _gen_inst_props(self, props : pd.DataFrame):
 #  YGate, iSwapGate, U1Gate, UGate, U2Gate, U3Gate, SGate, TGate
         gates_lut = {
                 'x': XGate,
