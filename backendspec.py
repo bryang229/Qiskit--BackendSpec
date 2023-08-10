@@ -345,7 +345,7 @@ class BackendSpec:
         return qubit_indices
 
 
-    def from_backend(self, parent : Union[Backend, BackendV2])# Union[qiskit.providers.Backend, qiskit.providers.BackendV2]):
+    def from_backend(self, parent : Union[Backend, BackendV2]):
         self.__init__(parent)
         
  # Modifiers
@@ -525,7 +525,7 @@ class BackendSpec:
 
 ### Setters:
 
-    def set_flag_gates_property(self, flag, gate_name, prop_key):
+    def set_flag_gates_property(self, flag: bool, gate_name: str, prop_key: str) -> bool:
         try:
             temp_df = self._gate_flag[self._gate_flag.gate == gate_name]
             temp_df[prop_key] = [flag] * len(temp_df[prop_key])
@@ -535,7 +535,7 @@ class BackendSpec:
             raise KeyError(f"Gate: {gate_name} with property: {prop_key} not found")
 
 
-    def set_flag_gate_property(self, flag, gate_name, prop_key, qubits):
+    def set_flag_gate_property(self, flag: str, gate_name: str, prop_key: str, qubits: Union[int, list[int, int]]) -> bool:
         try:
             qubits = tuple(qubits) if isinstance(qubits, list) else qubits
             temp_df = self._gate_flag.loc[self._gate_flag["gate"] == gate_name]
@@ -549,7 +549,7 @@ class BackendSpec:
         except:
             raise KeyError(f"Gate: {gate_name} with qubits: {str(qubits)} and property: {prop_key} not found")
         
-    def set_flag_qubits_property(self, flag, prop_key):
+    def set_flag_qubits_property(self, flag: bool, prop_key: str) -> bool:
         try:
             self._qubit_flag[prop_key] = [flag] * len(self._qubit_flag[prop_key])
             return True
@@ -557,18 +557,18 @@ class BackendSpec:
             raise KeyError(f"Qubits with property {str(prop_key)} not found")
 
         
-    def set_flag_qubit_property(self, flag, prop_key, qubit_id):
+    def set_flag_qubit_property(self, flag: bool, prop_key: str, qubit_id: int):
         try:
             self._qubit_flag[prop_key][qubit_id] = flag
             return True
         except:
             raise KeyError(f'Qubit {str(qubit_id)} not found with {str(prop_key)}')
 
-    def set_seed(self, seed):
+    def set_seed(self, seed: float):
         np.random.seed(seed)
         self._seed = seed
 
-    def set_coupling_map(self, coupling_map, coupling_type):
+    def set_coupling_map(self, coupling_map: CouplingMap, coupling_type: str):
         self._coupling_map = coupling_map
         self._edge_list = list(coupling_map.graph.edge_list())
         self._coupling_type = coupling_type
@@ -577,24 +577,24 @@ class BackendSpec:
         self._qubit_properties, self._gate_properties = self._sample_props()
         self._gen_flag_df()
 
-    def set_bidirectional(self, bidirectional):
+    def set_bidirectional(self, bidirectional: bool):
         self._bidirectional = bidirectional
 
-    def set_qubit_property(self, qubit, qubit_property, value):
+    def set_qubit_property(self, qubit: int, qubit_property: str, value: float):
         self._qubit_properties[qubit_property][qubit] = value
 
-    def set_qubit_properties(self, qubits, qubit_property, values):
+    def set_qubit_properties(self, qubits: list[int], qubit_property: str, values: list[Union[int, float]]):
        for i in qubits:
            self._qubit_properties[qubit_property][qubits[i]] = values[i]
 
-    def set_gate_properties(self, gate_name, gate_property, values):
+    def set_gate_properties(self, gate_name: str, gate_property: str, values: list[Union[int, float]]):
         temp_df = self._gate_properties[self._gate_properties.gate == gate_name]
         temp_df[gate_property].values[:] = values
         
         self._gate_properties.update(temp_df)
 
 
-    def set_gate_property(self, gate_name, gate_property, qubits, value):
+    def set_gate_property(self, gate_name: str, gate_property: str, qubits: Union[int, tuple[int, int]], value: list[Union[int, float]]):
         temp_df = pd.DataFrame(self._gate_properties)
         temp_df = temp_df[temp_df["gate"] == gate_name]
         if gate_name not in self._two_qubit_lut:  # case for any gate other than cx
@@ -605,19 +605,19 @@ class BackendSpec:
         property_index = temp_df.index[0]
         self._gate_properties[gate_property][property_index] = value
 
-    def set_gate_properties_dist(self,gate_name, prop_key, std, mean):
+    def set_gate_properties_dist(self,gate_name: str, prop_key: str, std: float, mean: float):
         count = len(self._edge_list) if gate_name in self._two_qubit_lut else self._num_qubits
         vals = self.sample_dist(std, mean, count)
         self.set_gate_properties(gate_name, prop_key, vals)
 
-    def set_qubits_properties_dist(self,qubits,  prop_key, std, mean):
+    def set_qubits_properties_dist(self,qubits: list[int],  prop_key: str, std: float, mean: float):
         vals = self.sample_dist(std, mean, self._num_qubits)
         self.set_qubit_properties(qubits, prop_key, vals)
 
-    def set_max_circuits(self, max_circuits):
+    def set_max_circuits(self, max_circuits: int):
         self._max_circuits = max_circuits
 
-    def set_dt(self, dt):
+    def set_dt(self, dt: float):
         self._dt = dt
 
     # dist_xxx => [std_xxx, mean_xxx]
