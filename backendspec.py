@@ -21,7 +21,7 @@ from qiskit.compiler.transpiler import target_to_backend_properties
 # TODO: Make it so users do not have to flag data added by hand
 # TODO: rename flags to frozen property
 
-pd.options.mode.chained_assignment = None  # default='warn' REMOVEEEEE
+# pd.options.mode.chained_assignment = None  # default='warn' REMOVEEEEE
 
 
 class BackendSpec:
@@ -653,10 +653,7 @@ class BackendSpec:
             property_key (str): The qubit property to scale.
             scale_factor (float): The factor to scale properties by.
         """
-        selection = self._gate_properties[self._gate_properties.gate==gate_name]
-        selection[property_key] *= scale_factor
-
-        self._gate_properties.update(selection)
+        self._gate_properties.loc[self._gate_properties.gate==gate_name, property_key][:] = scale_factor 
 
 
 ### Setters:
@@ -670,9 +667,8 @@ class BackendSpec:
             gate_property (str): Gate property to frozen.
         """
         try:
-            temp_df = self._frozen_gate_properties[self._frozen_gate_properties.gate == gate_name]
-            temp_df[gate_property] = [frozen] * len(temp_df[gate_property])
-            self._frozen_gate_properties.update(temp_df)
+            size = len(self._frozen_gate_properties[self._frozen_gate_properties.gate == gate_name])
+            self._frozen_gate_properties.loc[self._frozen_gate_properties.gate == gate_name,gate_property] = [frozen] * size
         except:
             raise KeyError(f"Gate: {gate_name} with property: {gate_property} not found")
 
@@ -688,14 +684,14 @@ class BackendSpec:
         """
         
         try:
-            qubits = tuple(qubits) if isinstance(qubits, list) else qubits
+            qubits = tuple(qubits) if gate_name in self._two_qubit_lut else qubits
             temp_df = self._frozen_gate_properties.loc[self._frozen_gate_properties["gate"] == gate_name]
             
             temp_df = temp_df.loc[temp_df["qubits"] == qubits]
 
             property_index = temp_df.index[0]
-
-            self._frozen_gate_properties[gate_property][property_index] = frozen
+            
+            self._frozen_gate_properties.loc[gate_property, property_index] = frozen
         except:
             raise KeyError(f"Gate: {gate_name} with qubits: {str(qubits)} and property: {gate_property} not found")
         
@@ -784,10 +780,12 @@ class BackendSpec:
             values (list[float]): list of values to be set
             freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
 
-        temp_df = self._gate_properties[self._gate_properties.gate == gate_name]
-        temp_df[gate_property].values[:] = values
+        # temp_df = self._gate_properties[self._gate_properties.gate == gate_name]
+        # temp_df[gate_property].values[:] = values
+
+        self._gate_properties.loc[self._gate_properties.gate == gate_name, gate_property][:] = values
         
-        self._gate_properties.update(temp_df)
+        # self._gate_properties.update(temp_df)
 
         if freeze_property:
             self.set_frozen_gates_property(True, gate_name, gate_property)
@@ -801,15 +799,13 @@ class BackendSpec:
             qubits (int | list[int, int]): Qubits that the gate is applied to (specification of gates to set)
             values (list[float]): list of values to be set
             freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
-        temp_df = pd.DataFrame(self._gate_properties)
-        temp_df = temp_df[temp_df["gate"] == gate_name]
-        if gate_name not in self._two_qubit_lut:  # case for any gate other than cx
-            temp_df = temp_df[temp_df["qubits"] == qubits]
-        else:   # case for cx gate, acts on two qubits
-            temp_df = temp_df[temp_df["qubits"] == tuple(qubits)]
+        qubits = tuple(qubits) if gate_name in self._two_qubit_lut else qubits
+
+        temp_df = self._gate_properties.loc[self._gate_properties["gate"] == gate_name]
+        temp_df = temp_df[temp_df["qubits"] == qubits]
 
         property_index = temp_df.index[0]
-        self._gate_properties[gate_property][property_index] = value
+        self._gate_properties.loc[gate_property,property_index] = value
 
         if freeze_property:
             self.set_frozen_gate_property(True, gate_name, gate_property, qubits)
@@ -967,8 +963,10 @@ class BackendSpec:
         replace = self._gate_properties.loc[self._gate_properties.gate==old_gate]
         replace['gate'].values[:] = [new_gate] * len(replace)
         self._gate_properties.update(replace)
-        replace['gate_error'][:] = freeze_property
-        replace['gate_length'][:] = freeze_property
+        
+        self._frozen_gate_properties.loc[self._frozen_gate_properties.gate ==old_gate,'gate_error'][:] = freeze_property
+        self._frozen_gate_properties.loc[self._frozen_gate_properties.gate ==old_gate,'gate_length'][:] = freeze_property
+        self._frozen_gate_properties.loc[self._frozen_gate_properties.gate==old_gate,'gate'][:] = new_gate
 
         index = self._basis_gates.index(old_gate)
         self._basis_gates.pop(index)
@@ -1042,8 +1040,8 @@ class BackendSpec:
         replace = self._gate_properties.loc[self._gate_properties.gate==old_gate]
         replace['gate'].values[:] = [new_gate] * len(replace)
         self._gate_properties.update(replace)
-        replace['gate_error'][:] = freeze_property
-        replace['gate_length'][:] = freeze_property
+        self._frozen_gate_properties.loc[self._frozen_gate_properties.gate==old_gate,'gate_error'][:] = freeze_property
+        self._frozen_gate_properties.loc[self._frozen_gate_properties.gate==old_gate,'gate_length'][:] = freeze_property
 
         index = self._basis_gates.index(old_gate)
         self._basis_gates.pop(index)
@@ -1089,9 +1087,10 @@ class BackendSpec:
             "gate_length": gate_length
         })
         self._gate_properties.update(temp_df)
-        temp_df['gate_error'][:] = freeze_property
-        temp_df['gate_length'][:] = freeze_property
-        self._frozen_gate_properties.update(temp_df)
+
+        self._frozen_gate_properties.loc[self._frozen_gate_properties.gate==old_gate, 'gate_error'][:] = freeze_property
+        self._frozen_gate_properties.loc[self._frozen_gate_properties.gate==old_gate, 'gate_length'][:]= freeze_property
+        self._frozen_gate_properties.loc[self._frozen_gate_properties.gate==old_gate, 'gate'][:] = new_gate
         
         index = self._basis_gates.index(old_gate)
         self._basis_gates.pop(index)
@@ -1133,9 +1132,10 @@ class BackendSpec:
             "gate_length": gate_length
         })
         self._gate_properties.update(temp_df)
-        temp_df['gate_error'][:] = freeze_property
-        temp_df['gate_length'][:] = freeze_property
-        self._frozen_gate_properties.update(temp_df)
+
+        self._frozen_gate_properties.loc[self._frozen_gate_properties.gate==old_gate, 'gate_error'][:] = freeze_property
+        self._frozen_gate_properties.loc[self._frozen_gate_properties.gate==old_gate, 'gate_length'][:]= freeze_property
+        self._frozen_gate_properties.loc[self._frozen_gate_properties.gate==old_gate, 'gate'][:] = new_gate
 
         index = self._basis_gates.index(old_gate)
         self._basis_gates.pop(index)
