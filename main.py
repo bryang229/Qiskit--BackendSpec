@@ -8,7 +8,11 @@ qc.x(0)
 qc.cx(0,1)
 qc.h(1)
 
+
+
 backend = spec.new_backend()
 
 transpiled = transpile(qc, backend, basis_gates=spec.basis_gates)
-
+print(transpiled)
+print(spec.qubit_properties)
+print(spec.__dir__())

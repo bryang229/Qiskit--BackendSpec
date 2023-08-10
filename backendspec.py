@@ -29,9 +29,9 @@ pd.options.mode.chained_assignment = None  # default='warn'
 class BackendSpec:
     def __init__(self, parent=None):
         
-        self.seed = np.random.randint(10000000,300000000)
-        np.random.seed(self.seed)
-        self.two_qubit_lut = ['cx', 'ecr', 'cz', 'swap', 'iswap'] #TODO: Add more cases
+        self._seed = np.random.randint(10000000,300000000)
+        np.random.seed(self._seed)
+        self._two_qubit_lut = ['cx', 'ecr', 'cz', 'swap', 'iswap'] #TODO: Add more cases
         
         if parent == None:          ## default None parameter for when user doesn't want to base it on an existing backend
             self._load_base()
@@ -42,14 +42,14 @@ class BackendSpec:
 
         if isinstance(parent, IBMQBackend):
             self._load_IBMQ(parent)
-            self.coupling_type = 'hexagonal'
+            self._coupling_type = 'hexagonal'
 
         elif "fake" in parent.name.lower():
             self.false = True
             self._load_IBM(parent)
-            self.coupling_type = 'hexagonal'
+            self._coupling_type = 'hexagonal'
             self._load_fake_data(parent.target)
-            self._load_edges(self.coupling_map.graph)
+            self._load_edges(self._coupling_map.graph)
             self._tuple_remover()
 
             self._gen_flag_df()
@@ -60,10 +60,10 @@ class BackendSpec:
             
         if isinstance(parent, BackendV2):
             self._load_IBM(parent)
-            self.coupling_type = 'hexagonal'
+            self._coupling_type = 'hexagonal'
             
         self._load_data()
-        self._load_edges(self.coupling_map.graph)
+        self._load_edges(self._coupling_map.graph)
         self._tuple_remover()
 
         self._gen_flag_df()
@@ -73,16 +73,16 @@ class BackendSpec:
 
 
     def _load_base(self):
-        self.basis_gates = ['x', 'sx', 'cx', 'rz', 'id', 'reset']
-        self.coupling_type = 'hexagonal' 
-        self.coupling_list = [(0,1), (1,0)]
-        self.coupling_map = CouplingMap()
-        self.coupling_map.graph.extend_from_edge_list([(0,1), (1,0)])
-        self.num_qubits = 2
+        self._basis_gates = ['x', 'sx', 'cx', 'rz', 'id', 'reset']
+        self._coupling_type = 'hexagonal' 
+        self._edge_list = [(0,1), (1,0)]
+        self._coupling_map = CouplingMap()
+        self._coupling_map.graph.extend_from_edge_list([(0,1), (1,0)])
+        self._num_qubits = 2
         
 
 
-        self.qubit_props_df = pd.DataFrame({"T1": [0,0],
+        self._qubit_properties = pd.DataFrame({"T1": [0,0],
                                             "T2": [0,0],
                                             "frequency": [0,0],
                                             "anharmonicity": [0,0],
@@ -92,17 +92,16 @@ class BackendSpec:
                                             "readout_length": [0,0]
                                             })
         
-        self.gate_props_df = pd.DataFrame({"gate": ['x', 'sx', 'rz', 'id', 'x', 'sx', 'rz', 'id','cx', 'cx', 'reset', 'reset'],
+        self._gate_properties = pd.DataFrame({"gate": ['x', 'sx', 'rz', 'id', 'x', 'sx', 'rz', 'id','cx', 'cx', 'reset', 'reset'],
                                         "qubits": [0, 0, 0, 0,  1, 1, 1 ,1, (0,1), (1,0), 0, 1],
                                         "gate_error": [0] *  12,
                                         "gate_length": [0] * 12
                                         })
         
-        self.parent_type = 'user-made'
-        self.max_circuits = 100
-        self.dt = 0
-        self.dtm = 0
-        self.bidirectional = True
+        self._max_circuits = 100
+        self._dt = 0
+        self._dtm = 0
+        self._bidirectional = True
         self._gen_flag_df()
 
         return
@@ -110,50 +109,46 @@ class BackendSpec:
 #TODO: Add calibartion
     def _load_IBMQ(self,parent):
         config = parent.configuration()
-        self.basis_gates = config.basis_gates
-        self.num_qubits = config.num_qubits
-        self.dt = config.dt
-        self.dtm = config.dtm
-        self.parent_type = 'ibmq'
+        self._basis_gates = config.basis_gates
+        self._num_qubits = config.num_qubits
+        self._dt = config.dt
+        self._dtm = config.dtm
 
         # Since IBMQBackend does not have a CouplingMap obj we create one (based off the edges given)
         coupling_map = config.coupling_map
-        self.coupling_list = [tuple(pair) for pair in coupling_map]
-        self.coupling_map = CouplingMap()
-        self.coupling_map.graph.extend_from_edge_list(self.coupling_list)
+        self._edge_list = [tuple(pair) for pair in coupling_map]
+        self._coupling_map = CouplingMap()
+        self._coupling_map.graph.extend_from_edge_list(self._edge_list)
         
-        self.max_circuits = config.max_experiments
+        self._max_circuits = config.max_experiments
         self.properties = parent.properties()
 
 
     def _load_IBM(self,parent):
         if self.false:
           self.properties =  target_to_backend_properties(parent.target)
-          self.basis_gates = list(self.properties._gates.keys())
+          self._basis_gates = list(self.properties._gates.keys())
         else:
-          self.basis_gates = parent.basis_gates
+          self._basis_gates = parent.basis_gates
           if 'reset' not in parent.basis_gates:
             parent.basis_gates.append('reset')
           self.properties = parent.properties()
-          self.dtm = parent.dtm
+          self._dtm = parent.dtm
 
 
-        self.num_qubits = parent.num_qubits
-        self.dt = parent.dt
-        self.coupling_map = parent.coupling_map
-        self.coupling_list = list(parent.coupling_map.graph.edge_list())
-        self.max_circuits = parent.max_circuits
-        self.parent_type = 'ibm'
-         
-
+        self._num_qubits = parent.num_qubits
+        self._dt = parent.dt
+        self._coupling_map = parent.coupling_map
+        self._edge_list = list(parent.coupling_map.graph.edge_list())
+        self._max_circuits = parent.max_circuits
 
     def _load_data(self):
         qubit_props = self.properties._qubits #loading qubit props
         
-        qubit_props_df = pd.DataFrame(data=qubit_props)
-        qubit_props_df = qubit_props_df.transpose() #transposing so proper keys are on columns
+        _qubit_properties = pd.DataFrame(data=qubit_props)
+        _qubit_properties = _qubit_properties.transpose() #transposing so proper keys are on columns
 
-        self.qubit_props_df = qubit_props_df # setting attribute
+        self._qubit_properties = _qubit_properties # setting attribute
 
 
         gate_props = self.properties._gates
@@ -164,7 +159,7 @@ class BackendSpec:
             gate = [props] * len(gate_props[props])
             qubits = list(gate_props[props].keys())
 
-            if props not in self.two_qubit_lut:
+            if props not in self._two_qubit_lut:
                 qubits = list(map(lambda x: x[0], qubits))
 
             temp_df = pd.DataFrame(gate_props[props])
@@ -185,7 +180,7 @@ class BackendSpec:
             gate_prop_holder = pd.concat([gate_prop_holder, temp_df], ignore_index=True, sort=False)
 
 
-        self.gate_props_df = gate_prop_holder
+        self._gate_properties = gate_prop_holder
 
     def _load_fake_data(self, target):
     
@@ -197,7 +192,7 @@ class BackendSpec:
             gate_keys = target[name].keys()
             gate_vals = target[name].values()
             temp_df = None
-            if name in self.two_qubit_lut:
+            if name in self._two_qubit_lut:
                 temp_df = pd.DataFrame({
                     'gate': [name] * len(gate_vals),
                     'qubits': gate_keys,
@@ -214,7 +209,7 @@ class BackendSpec:
                 })
 
             gate_props = pd.concat([gate_props, temp_df], ignore_index = True, sort = False)
-        self.gate_props_df = gate_props
+        self._gate_properties = gate_props
 
         t1 = [None] * target.num_qubits
         t2 = [None] * target.num_qubits
@@ -229,7 +224,7 @@ class BackendSpec:
 
 
 
-        self.qubit_props_df = pd.DataFrame({
+        self._qubit_properties = pd.DataFrame({
             'T1': t1,
             'T2': t2,
             'frequency': freq,
@@ -240,119 +235,113 @@ class BackendSpec:
 
 
     def _load_edges(self, graph):
-        in_edges =  np.empty(self.num_qubits)
-        out_edges = np.empty(self.num_qubits)
+        in_edges =  np.empty(self._num_qubits)
+        out_edges = np.empty(self._num_qubits)
 
-        for i in range(self.num_qubits):
+        for i in range(self._num_qubits):
             in_edges[i]  = len(graph.in_edges(i))
             out_edges[i] = len(graph.out_edges(i))
-        self.bidirectional = not False in (in_edges == out_edges)
-        self.qubit_props_df['total_edges'] = in_edges + out_edges
+        self._bidirectional = not False in (in_edges == out_edges)
+        self._qubit_properties['total_edges'] = in_edges + out_edges
     def _tuple_remover(self):
-        for key in self.qubit_props_df:
-            self.qubit_props_df[key] = self.qubit_props_df[key].apply(lambda x: x[0] if isinstance(x, tuple) else x)
-        for key in self.gate_props_df:
+        for key in self._qubit_properties:
+            self._qubit_properties[key] = self._qubit_properties[key].apply(lambda x: x[0] if isinstance(x, tuple) else x)
+        for key in self._gate_properties:
             if key == 'qubits':
                 continue
-            self.gate_props_df[key] = self.gate_props_df[key].apply(lambda x: x[0] if isinstance(x, tuple) else x)
-
-
-
-### Setters:
-
-    def set_coupling_map(self, coupling_map, coupling_type):
-        self.coupling_map = coupling_map
-        self.coupling_list = list(coupling_map.graph.edge_list())
-        self.coupling_type = coupling_type
-        self.num_qubits = coupling_map.size()
-        
-        self.qubit_props_df, self.gate_props_df = self._sample_props()
-        self._gen_flag_df()
-
-    def set_bidirectional(self, bidirectional):
-        self.bidirectional = bidirectional
-
-    def set_qubit_property(self, qubit, qubit_property, value):
-        self.qubit_props_df[qubit_property][qubit] = value
-
-    def set_qubit_properties(self, qubits, qubit_property, values):
-       for i in qubits:
-           self.qubit_props_df[qubit_property][qubits[i]] = values[i]
-
-    def set_gate_properties(self, gate_name, gate_property, values):
-        temp_df = self.gate_props_df[self.gate_props_df.gate == gate_name]
-        temp_df[gate_property].values[:] = values
-        
-        self.gate_props_df.update(temp_df)
-
-
-    def set_gate_property(self, gate_name, gate_property, qubits, value):
-        temp_df = pd.DataFrame(self.gate_props_df)
-        temp_df = temp_df[temp_df["gate"] == gate_name]
-        if gate_name not in self.two_qubit_lut:  # case for any gate other than cx
-            temp_df = temp_df[temp_df["qubits"] == qubits]
-        else:   # case for cx gate, acts on two qubits
-            temp_df = temp_df[temp_df["qubits"] == tuple(qubits)]
-
-        property_index = temp_df.index[0]
-        self.gate_props_df[gate_property][property_index] = value
-
-    def set_gate_properties_dist(self,gate_name, prop_key, std, mean):
-        count = len(self.coupling_list) if gate_name in self.two_qubit_lut else self.num_qubits
-        vals = self.sample_dist(std, mean, count)
-        self.set_gate_properties(gate_name, prop_key, vals)
-
-    def set_qubits_properties_dist(self,qubits,  prop_key, std, mean):
-        vals = self.sample_dist(std, mean, self.num_qubits)
-        self.set_qubit_properties(qubits, prop_key, vals)
-
-
-
-    def set_max_circuits(self, max_circuits):
-        self.max_circuits = max_circuits
-
-    def set_dt(self, dt):
-        self.dt = dt
+            self._gate_properties[key] = self._gate_properties[key].apply(lambda x: x[0] if isinstance(x, tuple) else x)
 
     
-
-    def sample_dist(self, std, mean, count):
-        distribution = stats.norm(
-            loc=mean,
-            scale=std
-        )
-        sample = distribution.rvs(size=10000)
-
-        series = pd.Series(sample)
-        sample = series.sample(n=count) # random_state for seed?
-        sample_output = np.array(sample.abs())
-
-        return sample_output
 ### Gettter
+    @property
+    def qubit_properties(self):
+        return self._qubit_properties
 
-    def get_num_qubits(self):
-      return self.num_qubits
+    @property
+    def gate_properties(self):
+        return self._gate_properties
+
+    @property
+    def num_qubits(self):
+      return self._num_qubits
+    
+    @property
+    def bidirectional(self):
+        return self._bidirectional
+
+    @property
+    def max_circuits(self):
+        return self._max_circuits
+
+    @property
+    def edge_list(self):
+        return self._edge_list
+
+    @property
+    def coupling_map(self):
+        return self._coupling_map
+
+    @property
+    def coupling_type(self):
+        return self._coupling_type
+
+    @property
+    def dt(self):
+        return self._dt
+
+    @property
+    def basis_gates(self):
+        return self._basis_gates
+
+    @property
+    def dtm(self):
+        return self._dtm
+
+    @property
+    def num_qubits(self):
+        return self._num_qubits
+
+    @property
+    def num_qubits(self):
+        return self._num_qubits
+    @property
+    def num_qubits(self):
+        return self._num_qubits
+
+    @property
+    def qubit_flag(self):
+        return self._qubit_flag
+
+    @property
+    def gate_flag(self):
+        return self._gate_flag
+    
+    @property
+    def seed(self):
+        return self._seed
+
+
 
     def get_qubit_property(self, qubit, qubit_property):
-      return self.qubit_props_df[qubit_property][qubit]
+      return self._qubit_properties[qubit_property][qubit]
 
 
     def get_gate_property(self, gate_name, qubits, gate_property):
-      temp_df = pd.DataFrame(self.gate_props_df)
+      temp_df = pd.DataFrame(self._gate_properties)
       temp_df = temp_df[temp_df["gate"] == gate_name]
-      if gate_name in self.two_qubit_lut:
+      if gate_name in self._two_qubit_lut:
           temp_df = temp_df[temp_df["qubits"] == qubits]
       else:
           temp_df = temp_df[temp_df["qubits"] == tuple(qubits)]
 
       property_index = temp_df.index[0]
 
-      return self.gate_props_df[gate_property][property_index]
+      return self._gate_properties[gate_property][property_index]
 
     def qubit_selector(self, property, lower_bound, upper_bound):
         qubit_indices = []
-        for i in range(len(self.qubit_props_df.index)):
-            if self.qubit_props_df[property][i] >= lower_bound and self.qubit_props_df[property][i] <= upper_bound:
+        for i in range(len(self._qubit_properties.index)):
+            if self._qubit_properties[property][i] >= lower_bound and self._qubit_properties[property][i] <= upper_bound:
                 qubit_indices.append(i)
 
         return qubit_indices
@@ -367,7 +356,7 @@ class BackendSpec:
         
         if increase_amount < 0:
             raise ValueError("Please provide a number greater than zero. To decrease see self.decrease_qubits(decrease_amount, coupling_type)")
-        self.num_qubits += increase_amount
+        self._num_qubits += increase_amount
         
         return self.coupling_change(coupling_type)
         
@@ -376,12 +365,14 @@ class BackendSpec:
     def decrease_qubits(self, decrease_amount, coupling_type):
         if decrease_amount > 0:
             raise ValueError("Please provide a number less than zero. To increase see self.increase_qubits(increase_amount, coupling_type)")
-        self.num_qubits += decrease_amount
+        self._num_qubits += decrease_amount
         return self.coupling_change(coupling_type)
 
+# Methods for coupling changes 
+
     def coupling_change(self, coupling_type):
-        self.coupling_type = coupling_type
-        num_qubits = self.num_qubits
+        self._coupling_type = coupling_type
+        num_qubits = self._num_qubits
         
         rgb = None
         updated_map = CouplingMap()
@@ -392,12 +383,12 @@ class BackendSpec:
             m = num_qubits
             col = 1
 
-            hex_map = updated_map.from_hexagonal_lattice(1,col, bidirectional=self.bidirectional)
+            hex_map = updated_map.from_hexagonal_lattice(1,col, bidirectional=self._bidirectional)
             
 
             while hex_map.size() < m:
                 col += 1
-                hex_map = updated_map.from_hexagonal_lattice(1,col, bidirectional=self.bidirectional) # increase cols if the thing starts to infinite loop
+                hex_map = updated_map.from_hexagonal_lattice(1,col, bidirectional=self._bidirectional) # increase cols if the thing starts to infinite loop
 
             graph = hex_map.graph
             node_list = np.array(graph.node_indices())
@@ -420,7 +411,7 @@ class BackendSpec:
         elif (coupling_type == 'square'):
 
             row = math.ceil(math.sqrt(num_qubits))
-            square_map = updated_map.from_grid(row, row, bidirectional=self.bidirectional)
+            square_map = updated_map.from_grid(row, row, bidirectional=self._bidirectional)
 
             graph = square_map.graph
             rgb = square_map.draw()
@@ -432,7 +423,7 @@ class BackendSpec:
             row = math.ceil(np.sqrt(num_qubits))
             col = math.ceil(num_qubits/row)
 
-            grid_map = updated_map.from_grid(row, col, bidirectional=self.bidirectional)
+            grid_map = updated_map.from_grid(row, col, bidirectional=self._bidirectional)
             graph = grid_map.graph
 
             rgb = grid_map.draw()
@@ -441,7 +432,7 @@ class BackendSpec:
 
         elif (coupling_type == 'ata'):
 
-            ata_map = updated_map.from_full(num_qubits, bidirectional=self.bidirectional)
+            ata_map = updated_map.from_full(num_qubits, bidirectional=self._bidirectional)
             graph = ata_map.graph
             rgb = ata_map.draw()
             rgb = rgb.convert("RGB")
@@ -450,11 +441,11 @@ class BackendSpec:
             raise LookupError("Please use a valid coupling type such as: hexagonal, square, ata or grid")
             
         updated_map.graph.extend_from_edge_list(graph.edge_list())
-        self.coupling_map = updated_map
-        self.coupling_list = list(updated_map.graph.edge_list())
-        self.num_qubits = updated_map.size()
+        self._coupling_map = updated_map
+        self._edge_list = list(updated_map.graph.edge_list())
+        self._num_qubits = updated_map.size()
             
-        self.qubit_props_df, self.gate_props_df = self._sample_props()
+        self._qubit_properties, self._gate_properties = self._sample_props()
         self._gen_flag_df()
 
         return rgb
@@ -468,11 +459,11 @@ class BackendSpec:
         if (coupling_type == 'hexagonal'):
             m = num_qubits
             col = 1
-            hex_map = updated_map.from_hexagonal_lattice(1,col, bidirectional=self.bidirectional)
+            hex_map = updated_map.from_hexagonal_lattice(1,col, bidirectional=self._bidirectional)
 
             while hex_map.size() < m:
                 col += 1
-                hex_map = updated_map.from_hexagonal_lattice(1,col, bidirectional=self.bidirectional) # increase cols if the thing starts to infinite loop
+                hex_map = updated_map.from_hexagonal_lattice(1,col, bidirectional=self._bidirectional) # increase cols if the thing starts to infinite loop
 
             graph = hex_map.graph
             node_list = np.array(graph.node_indices())
@@ -491,7 +482,7 @@ class BackendSpec:
         elif (coupling_type == 'square'):
 
             row = math.ceil(math.sqrt(num_qubits))
-            square_map = updated_map.from_grid(row, row, bidirectional=self.bidirectional)
+            square_map = updated_map.from_grid(row, row, bidirectional=self._bidirectional)
 
             graph = square_map.graph
 
@@ -501,13 +492,13 @@ class BackendSpec:
             row = math.ceil(np.sqrt(num_qubits))
             col = math.ceil(num_qubits/row)
 
-            grid_map = updated_map.from_grid(row, col, bidirectional=self.bidirectional)
+            grid_map = updated_map.from_grid(row, col, bidirectional=self._bidirectional)
             graph = grid_map.graph
 
     
             
         elif (coupling_type == 'ata'):
-            ata_map = updated_map.from_full(num_qubits, bidirectional=self.bidirectional)
+            ata_map = updated_map.from_full(num_qubits, bidirectional=self._bidirectional)
             updated_map = ata_map
         
         else:
@@ -525,47 +516,22 @@ class BackendSpec:
     
 
     def scale_qubit_property(self, property_key, scale_factor):
-        self.qubit_props_df[property_key] *= scale_factor
-
-    # def scale_qubit_property_sel(self, property_key, scale_factor, expression):
-    #     self.qubit_props_df[property_key][expression(self.qubit_props_df[property_key])] *= scale_factor
-
-    # def scale_gate_property_sel(self, gate_name, property_key, scale_factor, expression):
-    #     selection = self.gate_props_df[self.gate_props_df.gate == gate_name]
-    #     selection[expression(selection[property_key])] *= scale_factor
-
-    #     self.gate_props_df.update(selection)
+        self._qubit_properties[property_key] *= scale_factor
 
     def scale_gate_property(self, gate_name, property_key, scale_factor):
-        selection = self.gate_props_df[self.gate_props_df.gate==gate_name]
+        selection = self._gate_properties[self._gate_properties.gate==gate_name]
         selection[property_key] *= scale_factor
 
-        self.gate_props_df.update(selection)
+        self._gate_properties.update(selection)
 
 
-
-### Flagging for static values
-
-    def _gen_flag_df(self):
-        qubit_flag = self.qubit_props_df.copy()
-        gate_flag = self.gate_props_df.copy()
-
-        for col in qubit_flag.columns:
-            qubit_flag[col].values[:] = False
-        
-        gate_flag['gate_error'].values[:] = False
-        gate_flag['gate_length'].values[:] = False
-
-
-        self.qubit_flag = qubit_flag
-        self.gate_flag = gate_flag
-
+### Setters:
 
     def set_flag_gates_property(self, flag, gate_name, prop_key):
         try:
-            temp_df = self.gate_flag[self.gate_flag.gate == gate_name]
+            temp_df = self._gate_flag[self._gate_flag.gate == gate_name]
             temp_df[prop_key] = [flag] * len(temp_df[prop_key])
-            self.gate_flag.update(temp_df)
+            self._gate_flag.update(temp_df)
             return True
         except:
             raise KeyError(f"Gate: {gate_name} with property: {prop_key} not found")
@@ -574,20 +540,20 @@ class BackendSpec:
     def set_flag_gate_property(self, flag, gate_name, prop_key, qubits):
         try:
             qubits = tuple(qubits) if isinstance(qubits, list) else qubits
-            temp_df = self.gate_flag.loc[self.gate_flag["gate"] == gate_name]
+            temp_df = self._gate_flag.loc[self._gate_flag["gate"] == gate_name]
             
             temp_df = temp_df.loc[temp_df["qubits"] == qubits]
 
             property_index = temp_df.index[0]
 
-            self.gate_flag[prop_key][property_index] = flag
+            self._gate_flag[prop_key][property_index] = flag
             return True
         except:
             raise KeyError(f"Gate: {gate_name} with qubits: {str(qubits)} and property: {prop_key} not found")
         
     def set_flag_qubits_property(self, flag, prop_key):
         try:
-            self.qubit_flag[prop_key] = [flag] * len(self.qubit_flag[prop_key])
+            self._qubit_flag[prop_key] = [flag] * len(self._qubit_flag[prop_key])
             return True
         except:
             raise KeyError(f"Qubits with property {str(prop_key)} not found")
@@ -595,46 +561,103 @@ class BackendSpec:
         
     def set_flag_qubit_property(self, flag, prop_key, qubit_id):
         try:
-            self.qubit_flag[prop_key][qubit_id] = flag
+            self._qubit_flag[prop_key][qubit_id] = flag
             return True
         except:
             raise KeyError(f'Qubit {str(qubit_id)} not found with {str(prop_key)}')
 
+    def set_seed(self, seed):
+        np.random.seed(seed)
+        self._seed = seed
+
+    def set_coupling_map(self, coupling_map, coupling_type):
+        self._coupling_map = coupling_map
+        self._edge_list = list(coupling_map.graph.edge_list())
+        self._coupling_type = coupling_type
+        self._num_qubits = coupling_map.size()
+        
+        self._qubit_properties, self._gate_properties = self._sample_props()
+        self._gen_flag_df()
+
+    def set_bidirectional(self, bidirectional):
+        self._bidirectional = bidirectional
+
+    def set_qubit_property(self, qubit, qubit_property, value):
+        self._qubit_properties[qubit_property][qubit] = value
+
+    def set_qubit_properties(self, qubits, qubit_property, values):
+       for i in qubits:
+           self._qubit_properties[qubit_property][qubits[i]] = values[i]
+
+    def set_gate_properties(self, gate_name, gate_property, values):
+        temp_df = self._gate_properties[self._gate_properties.gate == gate_name]
+        temp_df[gate_property].values[:] = values
+        
+        self._gate_properties.update(temp_df)
+
+
+    def set_gate_property(self, gate_name, gate_property, qubits, value):
+        temp_df = pd.DataFrame(self._gate_properties)
+        temp_df = temp_df[temp_df["gate"] == gate_name]
+        if gate_name not in self._two_qubit_lut:  # case for any gate other than cx
+            temp_df = temp_df[temp_df["qubits"] == qubits]
+        else:   # case for cx gate, acts on two qubits
+            temp_df = temp_df[temp_df["qubits"] == tuple(qubits)]
+
+        property_index = temp_df.index[0]
+        self._gate_properties[gate_property][property_index] = value
+
+    def set_gate_properties_dist(self,gate_name, prop_key, std, mean):
+        count = len(self._edge_list) if gate_name in self._two_qubit_lut else self._num_qubits
+        vals = self.sample_dist(std, mean, count)
+        self.set_gate_properties(gate_name, prop_key, vals)
+
+    def set_qubits_properties_dist(self,qubits,  prop_key, std, mean):
+        vals = self.sample_dist(std, mean, self._num_qubits)
+        self.set_qubit_properties(qubits, prop_key, vals)
+
+    def set_max_circuits(self, max_circuits):
+        self._max_circuits = max_circuits
+
+    def set_dt(self, dt):
+        self._dt = dt
 
     # dist_xxx => [std_xxx, mean_xxx]
+
+    # Methods for basis gates
         
     def add_basis_gate_dist(self, new_gate, dist_error, dist_length):
-        if new_gate in self.two_qubit_lut:
+        if new_gate in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {new_gate}")
-        elif new_gate in self.basis_gates:
+        elif new_gate in self._basis_gates:
             raise AttributeError(f"You already have {new_gate} as a basis gate.")
-        gates = [new_gate] * self.num_qubits
-        error_vals = self.sample_dist(dist_error[0], dist_error[1], self.num_qubits)
-        length_vals = self.sample_dist(dist_length[0], dist_length[1], self.num_qubits)
+        gates = [new_gate] * self._num_qubits
+        error_vals = self.sample_dist(dist_error[0], dist_error[1], self._num_qubits)
+        length_vals = self.sample_dist(dist_length[0], dist_length[1], self._num_qubits)
 
         temp_df = pd.DataFrame({"gate": gates,
-                                "qubits": range(self.num_qubits),
+                                "qubits": range(self._num_qubits),
                                 "gate_error": error_vals,
                                 "gate_length": length_vals       
         })
 
-        self.gate_props_df = pd.concat((self.gate_props_df, temp_df), ignore_index= True, sort= False)
+        self._gate_properties = pd.concat((self._gate_properties, temp_df), ignore_index= True, sort= False)
 
         temp_df['gate_error'][:] = False
         temp_df['gate_length'][:] = False
-        self.basis_gates.append(new_gate) 
-        self.gate_flag = pd.concat((self.gate_flag, temp_df), ignore_index= True, sort= False)
+        self._basis_gates.append(new_gate) 
+        self._gate_flag = pd.concat((self._gate_flag, temp_df), ignore_index= True, sort= False)
     
     def add_basis_gate_numeric(self, gate_name, error_vals, length_vals):
-        if gate_name in self.two_qubit_lut:
+        if gate_name in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {gate_name}")
-        elif len(length_vals) != self.num_qubits != len(error_vals):
+        elif len(length_vals) != self._num_qubits != len(error_vals):
             raise AttributeError("error_val AND length_vals should be the same size as many qubits as your backend has. Please use self.increase_qubits(qubit) to change the size of your backend.")
-        elif gate_name in self.basis_gates:
+        elif gate_name in self._basis_gates:
             raise AttributeError(f"You already have {gate_name} as a basis gate.")
 
-        gates = [gate_name] * self.num_qubits
-        qubits = range(self.num_qubits)
+        gates = [gate_name] * self._num_qubits
+        qubits = range(self._num_qubits)
 
         temp_df = pd.DataFrame({"gate": gates,
                                 "qubits": qubits,
@@ -642,104 +665,104 @@ class BackendSpec:
                                 "gate_length": length_vals       
         })
 
-        self.gate_props_df = pd.concat((self.gate_props_df, temp_df), ignore_index= True, sort= False)
+        self._gate_properties = pd.concat((self._gate_properties, temp_df), ignore_index= True, sort= False)
 
         temp_df['gate_error'][:] = False
         temp_df['gate_length'][:] = False 
-        self.gate_flag = pd.concat((self.gate_flag, temp_df), ignore_index= True, sort= False)
-        self.basis_gates.append(gate_name)
+        self._gate_flag = pd.concat((self._gate_flag, temp_df), ignore_index= True, sort= False)
+        self._basis_gates.append(gate_name)
 
     def remove_basis_gate(self, gate_name):
-        if gate_name not in self.basis_gates:
+        if gate_name not in self._basis_gates:
             raise LookupError(f"{gate_name} is not in the basis gates.")
-        remove = self.gate_props_df.loc[self.gate_props_df.gate == gate_name].index
-        self.gate_props_df = self.gate_props_df.drop(remove)
-        self.gate_props_df.index = range(len(self.gate_props_df.index))
+        remove = self._gate_properties.loc[self._gate_properties.gate == gate_name].index
+        self._gate_properties = self._gate_properties.drop(remove)
+        self._gate_properties.index = range(len(self._gate_properties.index))
 
-        self.gate_flag = self.gate_flag.drop(remove)
-        self.gate_flag.index = range(len(self.gate_flag.index))
-        index = self.basis_gates.index(gate_name)
-        self.basis_gates.pop(index)
+        self._gate_flag = self._gate_flag.drop(remove)
+        self._gate_flag.index = range(len(self._gate_flag.index))
+        index = self._basis_gates.index(gate_name)
+        self._basis_gates.pop(index)
 
     def swap_basis_gate(self, old_gate, new_gate):
-        if new_gate in self.two_qubit_lut:
+        if new_gate in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {new_gate}")
-        elif old_gate in self.two_qubit_lut:
+        elif old_gate in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {old_gate}")
-        elif old_gate not in self.basis_gates:
+        elif old_gate not in self._basis_gates:
             raise LookupError(f"{old_gate} is not in the basis gates.")
-        elif new_gate in self.basis_gates:
+        elif new_gate in self._basis_gates:
             raise AttributeError(f"You already have {new_gate} as a basis gate.")
         
-        replace = self.gate_props_df.loc[self.gate_props_df.gate==old_gate]
+        replace = self._gate_properties.loc[self._gate_properties.gate==old_gate]
         replace['gate'].values[:] = [new_gate] * len(replace)
-        self.gate_props_df.update(replace)
+        self._gate_properties.update(replace)
         replace['gate_error'][:] = False
         replace['gate_length'][:] = False
 
-        index = self.basis_gates.index(old_gate)
-        self.basis_gates.pop(index)
-        self.basis_gates.append(new_gate)
+        index = self._basis_gates.index(old_gate)
+        self._basis_gates.pop(index)
+        self._basis_gates.append(new_gate)
 
     def swap_basis_gate_dist(self, old_gate, new_gate, dist_error, dist_length):
-        if new_gate in self.two_qubit_lut:
+        if new_gate in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {new_gate}")
-        elif old_gate in self.two_qubit_lut:
+        elif old_gate in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {old_gate}")
-        elif old_gate not in self.basis_gates:
+        elif old_gate not in self._basis_gates:
             raise LookupError(f"{old_gate} is not in the basis gates.")
-        elif new_gate in self.basis_gates:
+        elif new_gate in self._basis_gates:
             raise AttributeError(f"You already have {new_gate} as a basis gate.")
         self.remove_basis_gate(old_gate)
         self.add_basis_gate_dist(new_gate, dist_error, dist_length)
 
 
     def swap_basis_gate_numeric(self, old_gate, new_gate, error_vals, length_vals):
-        if new_gate in self.two_qubit_lut:
+        if new_gate in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {new_gate}")
-        elif old_gate in self.two_qubit_lut:
+        elif old_gate in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {old_gate}")
-        elif old_gate not in self.basis_gates:
+        elif old_gate not in self._basis_gates:
             raise LookupError(f"{old_gate} is not in the basis gates.")
-        elif new_gate in self.basis_gates:
+        elif new_gate in self._basis_gates:
             raise AttributeError(f"You already have {new_gate} as a basis gate.")
-        elif len(length_vals) != self.num_qubits != len(error_vals):
+        elif len(length_vals) != self._num_qubits != len(error_vals):
             raise AttributeError("error_val AND length_vals should be the same size as many qubits as your backend has. Please use self.increase_qubits(qubit) to change the size of your backend.")
         self.remove_basis_gate(old_gate)
         self.add_basis_gate_numeric(new_gate, error_vals, length_vals)
     
     def swap_2q_basis_gate(self, old_gate, new_gate):
-        if old_gate not in self.basis_gates:
+        if old_gate not in self._basis_gates:
             raise LookupError(f"{old_gate} is not in the basis gates.")
-        elif old_gate not in self.two_qubit_lut:
+        elif old_gate not in self._two_qubit_lut:
             raise LookupError(f"{old_gate} is not a two qubit gate.")
-        elif new_gate in self.basis_gates:
+        elif new_gate in self._basis_gates:
             raise AttributeError(f"You already have {new_gate} as a basis gate.")
-        elif new_gate not in self.two_qubit_lut:
+        elif new_gate not in self._two_qubit_lut:
             raise LookupError(f"{new_gate} is not a two qubit gate.")
 
-        replace = self.gate_props_df.loc[self.gate_props_df.gate==old_gate]
+        replace = self._gate_properties.loc[self._gate_properties.gate==old_gate]
         replace['gate'].values[:] = [new_gate] * len(replace)
-        self.gate_props_df.update(replace)
+        self._gate_properties.update(replace)
         replace['gate_error'][:] = False
         replace['gate_length'][:] = False
 
-        index = self.basis_gates.index(old_gate)
-        self.basis_gates.pop(index)
-        self.basis_gates.append(new_gate)
+        index = self._basis_gates.index(old_gate)
+        self._basis_gates.pop(index)
+        self._basis_gates.append(new_gate)
 
 
     def swap_2q_basis_gate_dist(self, old_gate, new_gate, dist_error, dist_length):
-        if old_gate not in self.basis_gates:
+        if old_gate not in self._basis_gates:
             raise LookupError(f"{old_gate} is not in the basis gates.")
-        elif old_gate not in self.two_qubit_lut:
+        elif old_gate not in self._two_qubit_lut:
             raise LookupError(f"{old_gate} is not a two qubit gate.")
-        elif new_gate in self.basis_gates:
+        elif new_gate in self._basis_gates:
             raise AttributeError(f"You already have {new_gate} as a basis gate.")
-        elif new_gate not in self.two_qubit_lut:
+        elif new_gate not in self._two_qubit_lut:
             raise LookupError(f"{new_gate} is not a two qubit gate.")
 
-        replace = self.gate_props_df.loc[self.gate_props_df.gate==old_gate]
+        replace = self._gate_properties.loc[self._gate_properties.gate==old_gate]
         qubits = replace.qubits
 
         count = len(replace)
@@ -748,94 +771,105 @@ class BackendSpec:
         gate_error = self.sample_dist(dist_error[0], dist_error[1], count)
         gate_length = self.sample_dist(dist_length[0], dist_length[1], count)
 
-        self.gate_props_df.drop(replace.index)
-        self.gate_flag.drop(replace.index)
+        self._gate_properties.drop(replace.index)
+        self._gate_flag.drop(replace.index)
         temp_df = pd.DataFrame({
             "gate" : gate,
             "qubits": qubits,
             "gate_error": gate_error,
             "gate_length": gate_length
         })
-        self.gate_props_df.update(temp_df)
+        self._gate_properties.update(temp_df)
         temp_df['gate_error'][:] = False
         temp_df['gate_length'][:] = False
-        self.gate_flag.update(temp_df)
+        self._gate_flag.update(temp_df)
         
-        index = self.basis_gates.index(old_gate)
-        self.basis_gates.pop(index)
-        self.basis_gates.append(new_gate)
+        index = self._basis_gates.index(old_gate)
+        self._basis_gates.pop(index)
+        self._basis_gates.append(new_gate)
 
     
     def swap_2q_basis_gate_numeric(self, old_gate, new_gate, gate_error, gate_length):
-        if old_gate not in self.basis_gates:
+        if old_gate not in self._basis_gates:
             raise LookupError(f"{old_gate} is not in the basis gates.")
-        elif old_gate not in self.two_qubit_lut:
+        elif old_gate not in self._two_qubit_lut:
             raise LookupError(f"{old_gate} is not a two qubit gate.")
-        elif new_gate in self.basis_gates:
+        elif new_gate in self._basis_gates:
             raise AttributeError(f"You already have {new_gate} as a basis gate.")
-        elif new_gate not in self.two_qubit_lut:
+        elif new_gate not in self._two_qubit_lut:
             raise LookupError(f"{new_gate} is not a two qubit gate.")
 
-        replace = self.gate_props_df.loc[self.gate_props_df.gate==old_gate]
+        replace = self._gate_properties.loc[self._gate_properties.gate==old_gate]
         qubits = replace.qubits
 
         count = len(replace)
         gate = [new_gate] * count
 
-        self.gate_props_df.drop(replace.index)
-        self.gate_flag.drop(replace.index)
+        self._gate_properties.drop(replace.index)
+        self._gate_flag.drop(replace.index)
         temp_df = pd.DataFrame({
             "gate" : gate,
             "qubits": qubits,
             "gate_error": gate_error,
             "gate_length": gate_length
         })
-        self.gate_props_df.update(temp_df)
+        self._gate_properties.update(temp_df)
         temp_df['gate_error'][:] = False
         temp_df['gate_length'][:] = False
-        self.gate_flag.update(temp_df)
+        self._gate_flag.update(temp_df)
 
-        index = self.basis_gates.index(old_gate)
-        self.basis_gates.pop(index)
-        self.basis_gates.append(new_gate)
+        index = self._basis_gates.index(old_gate)
+        self._basis_gates.pop(index)
+        self._basis_gates.append(new_gate)
+
+### Flagging for static values
+
+    def _gen_flag_df(self):
+        qubit_flag = self._qubit_properties.copy()
+        gate_flag = self._gate_properties.copy()
+
+        for col in qubit_flag.columns:
+            qubit_flag[col].values[:] = False
+        
+        gate_flag['gate_error'].values[:] = False
+        gate_flag['gate_length'].values[:] = False
+
+
+        self._qubit_flag = qubit_flag
+        self._gate_flag = gate_flag
 
 
     def _apply_flags(self, dfs):
         qubit_df = dfs[0]
         gate_df = dfs[1]
         for col in qubit_df.columns:
-            flag_row = self.qubit_flag[col].values[:]
+            flag_row = self._qubit_flag[col].values[:]
 
-            qubit_df[col].values[:] = qubit_df[col].values[:] * (1-flag_row) + self.qubit_props_df[col].values[:] * flag_row
+            qubit_df[col].values[:] = qubit_df[col].values[:] * (1-flag_row) + self._qubit_properties[col].values[:] * flag_row
 
         for col in ['gate_error', "gate_length"]:
-            flag_row = self.gate_flag[col].values
+            flag_row = self._gate_flag[col].values
 
-            gate_df[col].values[:] = gate_df[col].values[:] * (1-flag_row) + self.gate_props_df[col].values[:] * flag_row
+            gate_df[col].values[:] = gate_df[col].values[:] * (1-flag_row) + self._gate_properties[col].values[:] * flag_row
         return [qubit_df, gate_df]
 
-
-### Seeding
-    def set_seed(self, seed):
-        np.random.seed(seed)
-        self.seed = seed
 
 ### Samplers
     def _sample_props(self):
 
         qubit_df = pd.DataFrame()
         i = 0
-        for prop in self.qubit_props_df.columns:
-            qubit_df.insert(i, prop, self._sample_qubits(prop, self.num_qubits), True)
+        for prop in self._qubit_properties.columns:
+            qubit_df.insert(i, prop, self._sample_qubits(prop, self._num_qubits), True)
 
         gate_df = pd.DataFrame(columns=["gate", "qubits","gate_error", "gate_length"])
 
-        for gate in self.basis_gates:
+        for gate in self._basis_gates:
 
-            count = len(self.coupling_list) if gate in self.two_qubit_lut else self.num_qubits
+            count = len(self._edge_list) if gate in self._two_qubit_lut else self._num_qubits
 
             gate_list = [gate] * count
-            qubits = list(range(count)) if gate not in self.two_qubit_lut else self.coupling_list
+            qubits = list(range(count)) if gate not in self._two_qubit_lut else self._edge_list
 
             # try:
             gate_error = self._sample_gates(gate, 'gate_error', count) if 'reset' not in gate else [np.nan] * count
@@ -854,7 +888,7 @@ class BackendSpec:
         return qubit_df, gate_df
 
     def _sample_gates(self, gate, prop_key, sample_count): 
-        mini_df = self.gate_props_df.loc[self.gate_props_df['gate'] == gate]
+        mini_df = self._gate_properties.loc[self._gate_properties['gate'] == gate]
 
         data = mini_df[prop_key]
 
@@ -897,7 +931,7 @@ class BackendSpec:
       Return type: Pandas Series
 
       """
-        data = self.qubit_props_df[prop_key]
+        data = self._qubit_properties[prop_key]
 
         mu = np.mean(data)
         sigma = np.std(data)
@@ -916,14 +950,28 @@ class BackendSpec:
 
         return sample_output # returns a pd series (or does it have to be a df?)
     
+    def sample_dist(self, std, mean, count):
+        distribution = stats.norm(
+            loc=mean,
+            scale=std
+        )
+        sample = distribution.rvs(size=10000)
+
+        series = pd.Series(sample)
+        sample = series.sample(n=count) # random_state for seed?
+        sample_output = np.array(sample.abs())
+
+        return sample_output
+
+
 ### New backend generation code
 
     def _gen_target(self, qubits_df):
-        # qubits_df = self.qubit_props_df
-        num_qubits = self.num_qubits
+        # qubits_df = self._qubit_properties
+        num_qubits = self._num_qubits
         _target = Target(
                 num_qubits = num_qubits,
-                dt = self.dt,
+                dt = self._dt,
                 qubit_properties = [
                     IBMQubitProperties( # only grabs t1 t2 and freq because that's what qubitprop has
                         t1 = qubits_df['T1'][i],
@@ -1003,7 +1051,7 @@ class BackendSpec:
         
     
 
-        props = self.qubit_props_df
+        props = self._qubit_properties
         measure_dict = {
             'measure': (
             Measure(),
@@ -1022,11 +1070,11 @@ class BackendSpec:
 
     def new_backend(self):
         test_backend = FakeBackendV2()
-        test_backend._coupling_map = self.coupling_map
+        test_backend._coupling_map = self._coupling_map
 
         qubits_df, gates_df = self._apply_flags(self._sample_props())
 
-        basis_gates = list(self.basis_gates)
+        basis_gates = list(self._basis_gates)
         test_backend.qubits_df = qubits_df
         test_backend.gates_df = gates_df
         
@@ -1034,7 +1082,7 @@ class BackendSpec:
 
         inst_props = self._gen_inst_props(gates_df)
 
-        if "measure" not in self.basis_gates:
+        if "measure" not in self._basis_gates:
                 basis_gates.append("measure")
 
         for gate in basis_gates:
