@@ -704,8 +704,7 @@ class BackendSpec:
         
         Args:        
             frozen (bool): True to make property static, False to make property sampled.
-            qubit_property (str
-                Qubit property to frozen. """
+            qubit_property (str): Qubit property to frozen. """
         try:
             self._frozen_qubit_properties[qubit_property] = [frozen] * len(self._frozen_qubit_properties[qubit_property])
         except:
@@ -716,14 +715,9 @@ class BackendSpec:
         """Sets frozen for qubit property to be static (or values to not be sampled for in backend generation).
         
         Args:
-        
-
-        frozen: bool
-            True to make property static, False to make property sampled.
-        qubit_property: str
-            Qubit property to frozen.
-        qubit_id: int
-            Integer value that identifies qubit."""
+            frozen (bool): True to make property static, False to make property sampled.
+            qubit_property (str): Qubit property to frozen.
+            qubit_id (int): Integer value that identifies qubit."""
         try:
             self._frozen_qubit_properties[prop_key][qubit_id] = frozen
         except:
@@ -736,16 +730,13 @@ class BackendSpec:
 
     def set_coupling_map(self, coupling_map: CouplingMap, coupling_type: str):
         """Set Coupling Map object of backend 
-        - Note: Changing the coupling map could have the affected of changing the
-         number of qubits as well as resetting the frozens and resampling the property values.
-        
-        Args:
-        
 
-        coupling_map : CouplingMap
-            Coupling Map object to set
-        coupling_type : str
-            Name of the coupling scheme"""
+        Args:
+            coupling_map (CouplingMap): Coupling Map object to set
+            coupling_type (str): Name of the coupling scheme
+
+        - Note: Changing the coupling map could have the affected of changing the
+         number of qubits as well as resetting the frozens and resampling the property values."""
         self._coupling_map = coupling_map
         self._edge_list = list(coupling_map.graph.edge_list())
         self._coupling_type = coupling_type
@@ -761,16 +752,11 @@ class BackendSpec:
     def set_qubit_property(self, qubit_id: int, qubit_property: str, value: float, freeze_property : bool = False ):
         """Sets qubit property value of specific qubit
         
-        Args:
-        
-
-        qubit_id : int
-            Integer value that specifies the qubit.
-        qubit_property : str
-            Qubit property to be set
-        value: float
-            Value to be set
-        freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
+        Args:        
+            qubit_id (int): Integer value that specifies the qubit.
+            qubit_property (str): Qubit property to be set
+            value (float): Value to be set
+            freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
         
         self._qubit_properties[qubit_property][qubit_id] = value
         if freeze_property:
@@ -780,15 +766,10 @@ class BackendSpec:
        """Sets qubit property value of specified qubits
         
         Args:
-        
-
-        qubits : list[int]
-            List of integer values that specifies the qubits.
-        qubit_property : str
-            Qubit property to be set
-        values: list[float]
-            list of values to be set
-       freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
+            qubits (list[int]): List of integer values that specifies the qubits.
+            qubit_property (str): Qubit property to be set
+            values (list[float]): list of values to be set
+            freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
        for i in qubits:
            self._qubit_properties[qubit_property][qubits[i]] = values[i]
        if freeze_property:
@@ -798,15 +779,10 @@ class BackendSpec:
         """Sets all gate property values of specific gate type
         
         Args:
-        
-
-        gate_name : str
-            Name of gate.
-        gate_property : str
-            Gate property to be set.
-        values: list[float]
-            list of values to be set
-        freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
+            gate_name (str): Name of gate.
+            gate_property (str): Gate property to be set.
+            values (list[float]): list of values to be set
+            freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
 
         temp_df = self._gate_properties[self._gate_properties.gate == gate_name]
         temp_df[gate_property].values[:] = values
@@ -820,17 +796,11 @@ class BackendSpec:
         """Sets gate property values of specific gates under gate type
         
         Args:
-        
-
-        gate_name : str
-            Name of gate.
-        gate_property : str
-            Gate property to be set.
-        qubits: int | list[int, int]
-            Qubits that the gate is applied to (specification of gates to set)
-        values: list[float]
-            list of values to be set
-        freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
+            gate_name (str): Name of gate.
+            gate_property (str): Gate property to be set.
+            qubits (int | list[int, int]): Qubits that the gate is applied to (specification of gates to set)
+            values (list[float]): list of values to be set
+            freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
         temp_df = pd.DataFrame(self._gate_properties)
         temp_df = temp_df[temp_df["gate"] == gate_name]
         if gate_name not in self._two_qubit_lut:  # case for any gate other than cx
@@ -848,17 +818,11 @@ class BackendSpec:
         """Sets gate property values of specific gates using distribution
         
         Args:
-        
-
-        gate_name : str
-            Name of gate.
-        gate_property : str
-            Gate property to be set.
-        std: float
-            Standard deviation of distribution.
-        mean: float
-            Mean of distribution.
-        freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
+            gate_name (str): Name of gate.
+            gate_property (str): Gate property to be set.
+            std (float): Standard deviation of distribution.
+            mean (float): Mean of distribution.
+            freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
         count = len(self._edge_list) if gate_name in self._two_qubit_lut else self._num_qubits
         vals = self.sample_distribution(std, mean, count)
         self.set_gate_properties(gate_name, gate_property, vals)
@@ -870,17 +834,11 @@ class BackendSpec:
         """Sets gate property values of specific gates using distribution
         
         Args:
-        
-
-       qubits : list[int]
-            List of integer values that specifies the qubits.
-        qubit_property : str
-            Qubit property to be set
-        std: float
-            Standard deviation of distribution.
-        mean: float
-            Mean of distribution.
-        freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
+            qubits (list[int]): List of integer values that specifies the qubits.
+            qubit_property (str): Qubit property to be set
+            std (float): Standard deviation of distribution.
+            mean (float): Mean of distribution.
+            freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
         vals = self.sample_distribution(std, mean, self._num_qubits)
         self.set_multi_qubit_property(qubits, qubit_property, vals)
 
@@ -890,11 +848,18 @@ class BackendSpec:
 
 
     def set_max_circuits(self, max_circuits: int):
-        """Set the max circuits of backend"""
+        """Set the max circuits of backend
+        
+        Args: 
+            max_circuits (int) : The maximum number of circuits that can be run in a single job."""
         self._max_circuits = max_circuits
 
     def set_dt(self, dt: float):
-        """Set dt of backend"""
+        """Set dt of backend
+        
+        Args:
+            dt (float): The input signal timestep in seconds.
+        """
         self._dt = dt
 
     # distribution_xxx => [std_xxx, mean_xxx]
@@ -905,15 +870,12 @@ class BackendSpec:
         """Adds new basis gate with gate errors and gate lengths sampled from distribution.
         
         Args:
-        
-
-       new_gate : list[int]
-            The name of the new gate to add.
-        distribution_error : list[float, float] <-> [std, mean]
-            A list with the standard deviation and mean of the distribution for the error rate.
-        distribution_length: list[float, float] <-> [std, mean]
-            Standard deviation of distribution.
-        freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
+            new_gate (list[int]): The name of the new gate to add.
+            distribution_error (list[float, float]): A list with the standard deviation and mean of the distribution for the error rate. 
+            Formatted: [std, mean]
+            distribution_length (list[float, float]): Standard deviation of distribution. 
+            Formatted: [std, mean]
+            freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
 
         if new_gate in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {new_gate}")
@@ -941,15 +903,10 @@ class BackendSpec:
         """Adds new basis gate with gate errors and gate lengths using provided values.
         
         Args:
-        
-
-       new_gate : list[int]
-            The name of the new gate to add.
-        error_vals : list[float]
-            A list of error values.
-        length_vals: list[float]
-            A list of the length values.
-        freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
+            new_gate (list[int]): The name of the new gate to add.
+            error_vals (list[float]): A list of error values.
+            length_vals (list[float]): A list of the length values.
+            freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
         if gate_name in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {gate_name}")
         elif len(length_vals) != self._num_qubits != len(error_vals):
@@ -977,10 +934,7 @@ class BackendSpec:
         """Removes basis gate.
         
         Args:
-        
-
-        gate_name : list[int]
-            The name of gate to replace"""
+            gate_name (str): The name of gate to replace"""
         
         if gate_name not in self._basis_gates:
             raise LookupError(f"{gate_name} is not in the basis gates.")
@@ -994,19 +948,12 @@ class BackendSpec:
         self._basis_gates.pop(index)
 
     def swap_basis_gate(self, old_gate : str, new_gate : str, freeze_property: bool = False):
-
-        """
-        Change the basis gates from `old_gate` to `new_gate`.
+        """Change the basis gates from `old_gate` to `new_gate`.
         
         Args:
-        
-        
-        `old_gate`: the gate that requires replacing
-
-        `new_gate`: the gate that replaces `old_gate`
-
-        #### Returns: None
-        """
+            old_gate (str): the gate that requires replacing
+            new_gate (str): the gate that replaces `old_gate`
+            freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
 
         if new_gate in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {new_gate}")
@@ -1028,22 +975,16 @@ class BackendSpec:
         self._basis_gates.append(new_gate)
 
     def swap_basis_gate_distribution(self, old_gate : str, new_gate : str, distribution_error : list[float, float], distribution_length : list[float, float], freeze_property :bool=False):
-        """
-        Change the basis gates from `old_gate` to `new_gate` based on distributions for `error_vals` and `length_vals`.
+        """Change the basis gates from `old_gate` to `new_gate` based on distributions for `error_vals` and `length_vals`.
         
         Args:
-        
-        
-        `old_gate`: the gate that requires replacing
-
-        `new_gate`: the gate that replaces `old_gate`
-
-        `error_vals`: a list of error values for the gates.
-        
-        `length_vals`: a list of length values for the gates. 
-
-        #### Returns: None
-        """
+            old_gate (str): the gate that requires replacing
+            new_gate (str): the gate that replaces `old_gate`
+            distribution_error (list[float, float]): A list with the standard deviation and mean of the distribution for the error rate. 
+            Formatted: [std, mean]
+            distribution_length (list[float, float]): Standard deviation of distribution. 
+            Formatted: [std, mean]
+            freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
 
         if new_gate in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {new_gate}")
@@ -1058,22 +999,15 @@ class BackendSpec:
 
 
     def swap_basis_gate_numeric(self, old_gate : str, new_gate : str, error_vals : list[float], length_vals : list[float], freeze_property: bool = False):
-        """
-        Change the basis gates from `old_gate` to `new_gate` based on directly inputted values for `error_vals` and `length_vals`.
+        """Change the basis gates from `old_gate` to `new_gate` based on directly inputted values for `error_vals` and `length_vals`.
         
         Args:
-        
-        
-        `old_gate`: the gate that requires replacing
+            old_gate (str): the gate that requires replacing
+            new_gate (str): the gate that replaces `old_gate`
+            error_vals (list[float]): a list of error values for the gates.
+            length_vals (list[float]): a list of length values for the gates. 
+            freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
 
-        `new_gate`: the gate that replaces `old_gate`
-
-        `error_vals`: a list of error values for the gates.
-        
-        `length_vals`: a list of length values for the gates. 
-
-        #### Returns: None
-        """
 
         if new_gate in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {new_gate}")
@@ -1089,18 +1023,12 @@ class BackendSpec:
         self.add_basis_gate_numeric(new_gate, error_vals, length_vals, freeze_property)
     
     def swap_2q_basis_gate(self, old_gate : str, new_gate : str, freeze_property:bool = False):
-        """
-        Change the 2-qubit gates from `old_gate` to `new_gate`.
+        """Change the 2-qubit gates from `old_gate` to `new_gate`.
         
         Args:
-        
-        
-        `old_gate`: the gate that requires replacing
-
-        `new_gate`: the gate that replaces `old_gate`
-
-        #### Returns: None
-        """
+            old_gate (str): the gate that requires replacing
+            new_gate (str): the gate that replaces `old_gate`
+            freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
 
         if old_gate not in self._basis_gates:
             raise LookupError(f"{old_gate} is not in the basis gates.")
@@ -1123,23 +1051,16 @@ class BackendSpec:
 
 
     def swap_2q_basis_gate_distribution(self, old_gate : str, new_gate : str, distribution_error : list[float, float], distribution_length : list[float, float], freeze_property: bool = False):
-
-        """
-        Applies a new 2-qubit gate with a specified distribution for the `gate_error`s and the `gate_length`s.
+        """Applies a new 2-qubit gate with a specified distribution for the `gate_error`s and the `gate_length`s.
     
         Args:
-        
-        
-        `old_gate`: the gate that requires replacing
-
-        `new_gate`: the gate that replaces `old_gate`
-
-        `distribution_error`: list[float, float] <-> [std, mean]
-            Standard deviation and mean of the error distribution to be applied
-        
-        `distribution_length`: list[float, float] <-> [std, mean]
-            Standard deviation and mean of the error distribution to be applied
-        """
+            old_gate (str): the gate that requires replacing
+            new_gate (str): the gate that replaces `old_gate`
+            distribution_error (list[float, float]): A list with the standard deviation and mean of the distribution for the error rate. 
+            Formatted: [std, mean]
+            distribution_length (list[float, float]): Standard deviation of distribution. 
+            Formatted: [std, mean]
+            freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
 
         if old_gate not in self._basis_gates:
             raise LookupError(f"{old_gate} is not in the basis gates.")
@@ -1178,24 +1099,15 @@ class BackendSpec:
 
     
     def swap_2q_basis_gate_numeric(self, old_gate : str, new_gate : str, gate_error : list[float], gate_length : list[float], freeze_property:bool=False):
-        """
-        Changes the basis gates of a 2-qubit system from the `old_gate`s to the `new_gate`s, while also applying the required `gate_errors`
+        """Changes the basis gates of a 2-qubit system from the `old_gate`s to the `new_gate`s, while also applying the required `gate_errors`
         with the respective `gate_length`s.
     
-        Args:
-        
-        
-        `old_gate`: str
-            The gate that requires replacing
-
-        `new_gate`: str
-            The gate that replaces `old_gate`
-
-        `gate_error`: list[float]
-            A list of errors corresponding to the `new_gates`
-
-        `gate_length`: list[float]
-            A list of length of the gate"""
+        Args:     
+        old_gate (str): The gate that requires replacing
+        new_gate (str): The gate that replaces `old_gate`
+        gate_error (list[float]): A list of errors corresponding to the `new_gates`
+        gate_length (list[float]): A list of length of the gate
+        freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
 
         if old_gate not in self._basis_gates:
             raise LookupError(f"{old_gate} is not in the basis gates.")
@@ -1253,11 +1165,10 @@ class BackendSpec:
         Keeps frozen properties static while sampling for unfrozen properties
     
         Args:
-        
-        
-        `dfs`: The DataFrames to which the frozen properties are applied.
+            dfs (pd.DataFrame): The DataFrames to which the frozen properties are applied.
 
-        #### Returns: A list of the DataFrames with both sampled and static values.""" 
+        Returns: 
+            frozen_props: A list of the DataFrames with both sampled and static values.""" 
 
         qubit_df = dfs[0]
         gate_df = dfs[1]
@@ -1276,14 +1187,9 @@ class BackendSpec:
 ### Samplers
     def _sample_props(self) -> list[np.ndarray, np.ndarray]:
         """Generates DataFrames from samples for qubits and gates.
-    
-        Args:
         
-        
-        None
-
-        #### Returns: List
-        """ 
+        Returns:
+            sampled_props (list[np.ndarray, np.ndarray]): List of DataFrames with sampled values""" 
 
         qubit_df = pd.DataFrame()
         i = 0
@@ -1316,19 +1222,15 @@ class BackendSpec:
         return qubit_df, gate_df
 
     def _sample_gates(self, gate : str, prop_key : str, count : int) -> np.ndarray:
-        """
-        Generates a normal distribution using the specified `prop_key` for the properties of the gates, and samples a `count` number of values from 
+        """Generates a normal distribution using the specified `prop_key` for the properties of the gates, and samples a `count` number of values from 
         the normal distribution.
     
         Args:
-        
-        
-        `prop_key`: The property for which the sample is being generated.
-        
-        `count`: number of samples that will be generated.
+            prop_key (str): The property for which the sample is being generated.
+            count (int): number of samples that will be generated.
 
-        #### Returns: Numpy array (np.ndarray)
-        """ 
+        Returns:
+            sampled_gates (np.ndarray): Numpy array containing sampled values using distribution found in `self.gate_properties`""" 
         mini_df = self._gate_properties.loc[self._gate_properties['gate'] == gate]
 
         data = mini_df[prop_key]
@@ -1355,14 +1257,12 @@ class BackendSpec:
         """Generates a normal distribution using the specified `prop_key` for the properties of the qubits, and samples a `count` number of values from 
         the normal distribution.
     
-        Args:
-        
+        Args:    
+            prop_key (str): The property for which the sample is being generated.
+            count (int): number of samples that will be generated.
 
-        `prop_key`: The property for which the sample is being generated.
-        
-        `count`: number of samples that will be generated.
-
-        #### Returns: Numpy array (np.ndarray)"""
+        Returns:
+            sampled_qubits (np.ndarray): Numpy array containing sampled values using distribution found in `self.qubit_properties`"""
         data = self._qubit_properties[prop_key]
 
         mu = np.mean(data)
@@ -1387,16 +1287,11 @@ class BackendSpec:
         distribution.
     
         Args:
-        
-        
-        `mean`: Mean of the distribution.
+            mean (float): Mean of the distribution.
+            std (float): Standard deviation of the distribution.
+            count (int): number of samples that will be generated.
 
-        `std`: Standard deviation of the distribution.
-
-        `count`: number of samples that will be generated.
-
-        #### Returns: Numpy array (np.ndarray)"""
-
+        sampled_distribution (np.ndarray): Numpy array containing sampled values using distribution provided by user"""
         distribution = stats.norm(
             loc=mean,
             scale=std
@@ -1413,24 +1308,20 @@ class BackendSpec:
 ### New backend generation code
 
     def _gen_target(self, qubits_df : pd.DataFrame) -> Target:
+        """Generates a `Target` from `BackendSpec` based on the backend's `QubitProperties`.
 
-        """
-        Generates a `Target` from `BackendSpec` based on the backend's `QubitProperties`.
-    
         Args:
-        
-        
-        `qubits_df`: DataFrame containing QubitProperties
+            `qubits_df`: DataFrame containing QubitProperties
 
-        #### Returns: Target
-        """
-        # qubits_df = self._qubit_properties
+        Returns: 
+            target (Target): Target object with qubit properties from `qubit_df`"""
+        
         num_qubits = self._num_qubits
         _target = Target(
                 num_qubits = num_qubits,
                 dt = self._dt,
                 qubit_properties = [
-                    IBMQubitProperties( # only grabs t1 t2 and freq because that's what qubitprop has
+                    IBMQubitProperties( 
                         t1 = qubits_df['T1'][i],
                         t2 = qubits_df['T2'][i],
                         frequency = qubits_df['frequency'][i],
@@ -1441,16 +1332,14 @@ class BackendSpec:
             )
         return _target
 
-    def _gen_inst_props(self, props : pd.DataFrame) -> pd.DataFrame:
-        """
-        Generates a `DataFrame` from `BackendSpec` of the `InstructionProperties` of the gates.
+    def _gen_inst_props(self, props : pd.DataFrame) -> dict:
+        """Generates a dictionary from `BackendSpec` of the `InstructionProperties` of the gates.
     
         Args:
-        
-        
-        `props`: DataFrame containing the gate properties of the backend.
+            props (pd.DataFrame): DataFrame containing the gate properties of the backend.
 
-        #### Returns: FakeBackendV2
+        Returns: 
+            instruction_dict (dict): Dictionary containing all gates described in `BackendSpec`'s `self.gate_properties`.
         """
         gates_lut = {
                 'x': XGate,
@@ -1513,9 +1402,6 @@ class BackendSpec:
             })
             }
             inst_dict[gate] = mini_dict[gate]
-        
-        
-    
 
         props = self._qubit_properties
         measure_dict = {
@@ -1536,22 +1422,18 @@ class BackendSpec:
 
     def new_backend(self) -> FakeBackendV2:
         """Generates new backend using the properties stored in the `BackendSpec` (along with static freezing)
-    
-        Args:
-        
-        
-        None
+ 
+        Returns: 
+            new_backend (FakeBackendV2): A `FakeBackendV2` object with properties that follow the BackendSpec."""
 
-        #### Returns: FakeBackendV2"""
-
-        test_backend = FakeBackendV2()
-        test_backend._coupling_map = self._coupling_map
+        new_backend = FakeBackendV2()
+        new_backend._coupling_map = self._coupling_map
 
         qubits_df, gates_df = self._apply_freeze(self._sample_props())
 
         basis_gates = list(self._basis_gates)
-        test_backend.qubits_df = qubits_df
-        test_backend.gates_df = gates_df
+        new_backend.qubits_df = qubits_df
+        new_backend.gates_df = gates_df
         
         _target = self._gen_target(qubits_df)
 
@@ -1565,7 +1447,7 @@ class BackendSpec:
                     _target.add_instruction(*inst_props[gate])
                 except:
                     raise QiskitError(f"{gate} is not a valid basis gate")
-        test_backend._target = _target
-        test_backend._basis_gates = basis_gates
-        return test_backend
+        new_backend._target = _target
+        new_backend._basis_gates = basis_gates
+        return new_backend
 
