@@ -24,6 +24,7 @@ pd.options.mode.chained_assignment = None  # default='warn'
 
 
 class BackendSpec:
+
     def __init__(self, parent: Union[FakeBackendV2, Backend, BackendV2]=None):
         
         self._seed = np.random.randint(10000000,300000000)
@@ -879,7 +880,7 @@ class BackendSpec:
 
         if set_static_flag:
             for qubit in qubits:
-                self.set_flag_qubit_property(True,qubit,  gate_property, qubits)
+                self.set_flag_qubit_property(True,qubit,  qubit_property, qubits)
 
 
     def set_max_circuits(self, max_circuits: int):
@@ -970,6 +971,14 @@ class BackendSpec:
         self._basis_gates.append(gate_name)
 
     def remove_basis_gate(self, gate_name : str):
+        """Removes basis gate.
+        
+        Parameters
+        ---------
+
+        gate_name : list[int]
+            The name of gate to replace"""
+        
         if gate_name not in self._basis_gates:
             raise LookupError(f"{gate_name} is not in the basis gates.")
         remove = self._gate_properties.loc[self._gate_properties.gate == gate_name].index
@@ -982,6 +991,20 @@ class BackendSpec:
         self._basis_gates.pop(index)
 
     def swap_basis_gate(self, old_gate : str, new_gate : str, set_static_flag: bool = False):
+
+        """
+        Change the basis gates from `old_gate` to `new_gate`.
+        
+        Parameters
+        ----------
+        
+        `old_gate`: the gate that requires replacing
+
+        `new_gate`: the gate that replaces `old_gate`
+
+        #### Returns: None
+        """
+
         if new_gate in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {new_gate}")
         elif old_gate in self._two_qubit_lut:
@@ -1002,6 +1025,23 @@ class BackendSpec:
         self._basis_gates.append(new_gate)
 
     def swap_basis_gate_distribution(self, old_gate : str, new_gate : str, distribution_error : list[float, float], distribution_length : list[float, float], set_static_flag :bool=False):
+        """
+        Change the basis gates from `old_gate` to `new_gate` based on distributions for `error_vals` and `length_vals`.
+        
+        Parameters
+        ----------
+        
+        `old_gate`: the gate that requires replacing
+
+        `new_gate`: the gate that replaces `old_gate`
+
+        `error_vals`: a list of error values for the gates.
+        
+        `length_vals`: a list of length values for the gates. 
+
+        #### Returns: None
+        """
+
         if new_gate in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {new_gate}")
         elif old_gate in self._two_qubit_lut:
@@ -1015,6 +1055,23 @@ class BackendSpec:
 
 
     def swap_basis_gate_numeric(self, old_gate : str, new_gate : str, error_vals : list[float], length_vals : list[float], set_static_flag: bool = False):
+        """
+        Change the basis gates from `old_gate` to `new_gate` based on directly inputted values for `error_vals` and `length_vals`.
+        
+        Parameters
+        ----------
+        
+        `old_gate`: the gate that requires replacing
+
+        `new_gate`: the gate that replaces `old_gate`
+
+        `error_vals`: a list of error values for the gates.
+        
+        `length_vals`: a list of length values for the gates. 
+
+        #### Returns: None
+        """
+
         if new_gate in self._two_qubit_lut:
             raise LookupError(f"Please use a two qubit basis gate function to modify {new_gate}")
         elif old_gate in self._two_qubit_lut:
@@ -1029,6 +1086,19 @@ class BackendSpec:
         self.add_basis_gate_numeric(new_gate, error_vals, length_vals, set_static_flag)
     
     def swap_2q_basis_gate(self, old_gate : str, new_gate : str, set_static_flag:bool = False):
+        """
+        Change the 2-qubit gates from `old_gate` to `new_gate`.
+        
+        Parameters
+        ----------
+        
+        `old_gate`: the gate that requires replacing
+
+        `new_gate`: the gate that replaces `old_gate`
+
+        #### Returns: None
+        """
+
         if old_gate not in self._basis_gates:
             raise LookupError(f"{old_gate} is not in the basis gates.")
         elif old_gate not in self._two_qubit_lut:
@@ -1050,6 +1120,24 @@ class BackendSpec:
 
 
     def swap_2q_basis_gate_distribution(self, old_gate : str, new_gate : str, distribution_error : list[float, float], distribution_length : list[float, float], set_static_flag: bool = False):
+
+        """
+        Applies a new 2-qubit gate with a specified distribution for the `gate_error`s and the `gate_length`s.
+    
+        Parameters
+        ----------
+        
+        `old_gate`: the gate that requires replacing
+
+        `new_gate`: the gate that replaces `old_gate`
+
+        `distribution_error`: list[float, float] <-> [std, mean]
+            Standard deviation and mean of the error distribution to be applied
+        
+        `distribution_length`: list[float, float] <-> [std, mean]
+            Standard deviation and mean of the error distribution to be applied
+        """
+
         if old_gate not in self._basis_gates:
             raise LookupError(f"{old_gate} is not in the basis gates.")
         elif old_gate not in self._two_qubit_lut:
@@ -1087,6 +1175,26 @@ class BackendSpec:
 
     
     def swap_2q_basis_gate_numeric(self, old_gate : str, new_gate : str, gate_error : list[float], gate_length : list[float], set_static_flag:bool=False):
+        """
+        Changes the basis gates of a 2-qubit system from the `old_gate`s to the `new_gate`s, while also applying the required `gate_errors`
+        with the respective `gate_length`s.
+    
+        Parameters
+        ----------
+        
+        `old_gate`: str
+            The gate that requires replacing
+
+        `new_gate`: str
+            The gate that replaces `old_gate`
+
+        `gate_error`: list[float]
+            A list of errors corresponding to the `new_gates`
+
+        `gate_length`: list[float]
+            A list of length of the gate
+        """
+
         if old_gate not in self._basis_gates:
             raise LookupError(f"{old_gate} is not in the basis gates.")
         elif old_gate not in self._two_qubit_lut:
@@ -1119,11 +1227,21 @@ class BackendSpec:
         self._basis_gates.pop(index)
         self._basis_gates.append(new_gate)
 
-        # stop here for typing
-
 ### Flagging for static values
 
     def _gen_flag(self):
+
+        """
+        Generate flags for gates and qubits, where flagged properties are set with a specified error type.
+    
+        Parameters
+        ----------
+        
+        None
+
+        #### Returns: None
+        """ 
+
         qubit_flag = self._qubit_properties.copy()
         gate_flag = self._gate_properties.copy()
 
@@ -1139,6 +1257,18 @@ class BackendSpec:
 
 
     def _apply_flags(self, dfs : pd.DataFrame) -> list[np.ndarray, np.ndarray]:
+
+        """
+        Applies flags set above to the respective columns of the `dfs`.
+    
+        Parameters
+        ----------
+        
+        `dfs`: The DataFrames to which the flags are applied.
+
+        #### Returns: A list of the DataFrames with both sampled and static values.
+        """ 
+
         qubit_df = dfs[0]
         gate_df = dfs[1]
         for col in qubit_df.columns:
@@ -1155,6 +1285,17 @@ class BackendSpec:
 
 ### Samplers
     def _sample_props(self) -> list[np.ndarray, np.ndarray]:
+
+        """
+        Generates DataFrames from samples for qubits and gates.
+    
+        Parameters
+        ----------
+        
+        None
+
+        #### Returns: List
+        """ 
 
         qubit_df = pd.DataFrame()
         i = 0
@@ -1186,7 +1327,20 @@ class BackendSpec:
 
         return qubit_df, gate_df
 
-    def _sample_gates(self, gate : str, prop_key : str, sample_count : int) -> np.ndarray: 
+    def _sample_gates(self, gate : str, prop_key : str, count : int) -> np.ndarray:
+        """
+        Generates a normal distribution using the specified `prop_key` for the properties of the gates, and samples a `count` number of values from 
+        the normal distribution.
+    
+        Parameters
+        ----------
+        
+        `prop_key`: The property for which the sample is being generated.
+        
+        `count`: number of samples that will be generated.
+
+        #### Returns: Numpy array (np.ndarray)
+        """ 
         mini_df = self._gate_properties.loc[self._gate_properties['gate'] == gate]
 
         data = mini_df[prop_key]
@@ -1202,34 +1356,25 @@ class BackendSpec:
         sample = distribution.rvs(size=10000)
 
         series = pd.Series(sample)
-        sample = series.sample(n=sample_count) # random_state for seed?
+        sample = series.sample(n=count) # random_state for seed?
 
         sample_output = np.array(sample.abs())
 
         return sample_output # returns a pd series (or does it have to be a df?)
 
 
-    def _sample_qubits(self, prop_key : str, sample_count : int) -> np.ndarray: # never mind i need backendspec
+    def _sample_qubits(self, prop_key : str, count : int) -> np.ndarray: 
+        """Generates a normal distribution using the specified `prop_key` for the properties of the qubits, and samples a `count` number of values from 
+        the normal distribution.
+    
+        Parameters
+        ----------
 
-        """
-      The method signature of this function follows: normal_distribution(self, error_type)
-      with the following parameter:
-        * error_type (str)
+        `prop_key`: The property for which the sample is being generated.
+        
+        `count`: number of samples that will be generated.
 
-      At the moment, the function covers 4 functions:
-      - T1 (loss of coherence)
-      - T2 (loss of phase)
-      - Readout error
-      - Single Gate error
-
-      We use NumPy, Scipy sampling and Seaborn to conduct the sampling. Each of the errors
-      have an assoicated normal distribution generating 10000 random samples, and an additional
-      uniform random sample, that randomly chooses ONE sample from the overall normal distribution
-      to use as the respective error value for the created experimental backend.
-
-      Return type: Pandas Series
-
-      """
+        #### Returns: Numpy array (np.ndarray)"""
         data = self._qubit_properties[prop_key]
 
         mu = np.mean(data)
@@ -1243,13 +1388,27 @@ class BackendSpec:
         sample = distribution.rvs(size=10000)
 
         series = pd.Series(sample)
-        sample = series.sample(n=sample_count) # random_state for seed?
+        sample = series.sample(n=count) # random_state for seed?
 
         sample_output = np.array(sample.abs())
 
         return sample_output # returns a pd series (or does it have to be a df?)
     
     def sample_distribution(self, std : int, mean : int, count : int) -> np.ndarray:
+        """Generates a normal distribution with an inputted `mean`, `standard deviation`, and sample a `count` number of values from the normal
+        distribution.
+    
+        Parameters
+        ----------
+        
+        `mean`: Mean of the distribution.
+
+        `std`: Standard deviation of the distribution.
+
+        `count`: number of samples that will be generated.
+
+        #### Returns: Numpy array (np.ndarray)"""
+
         distribution = stats.norm(
             loc=mean,
             scale=std
@@ -1266,6 +1425,17 @@ class BackendSpec:
 ### New backend generation code
 
     def _gen_target(self, qubits_df : pd.DataFrame) -> Target:
+
+        """
+        Generates a `Target` from `BackendSpec` based on the backend's `QubitProperties`.
+    
+        Parameters
+        ----------
+        
+        `qubits_df`: DataFrame containing QubitProperties
+
+        #### Returns: Target
+        """
         # qubits_df = self._qubit_properties
         num_qubits = self._num_qubits
         _target = Target(
@@ -1284,7 +1454,16 @@ class BackendSpec:
         return _target
 
     def _gen_inst_props(self, props : pd.DataFrame) -> pd.DataFrame:
-#  YGate, iSwapGate, U1Gate, UGate, U2Gate, U3Gate, SGate, TGate
+        """
+        Generates a `DataFrame` from `BackendSpec` of the `InstructionProperties` of the gates.
+    
+        Parameters
+        ----------
+        
+        `props`: DataFrame containing the gate properties of the backend.
+
+        #### Returns: FakeBackendV2
+        """
         gates_lut = {
                 'x': XGate,
                 'y': YGate,
@@ -1368,6 +1547,18 @@ class BackendSpec:
 
 
     def new_backend(self) -> FakeBackendV2:
+
+        """
+        Generates new backend using the properties stored in the `BackendSpec` (along with static flagging)
+    
+        Parameters
+        ----------
+        
+        None
+
+        #### Returns: FakeBackendV2
+        """
+
         test_backend = FakeBackendV2()
         test_backend._coupling_map = self._coupling_map
 
