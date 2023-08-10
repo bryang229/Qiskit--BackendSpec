@@ -3,13 +3,13 @@ import math
 import pandas as pd
 from scipy import stats
 import warnings
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Union
 from qiskit.transpiler import CouplingMap
 from qiskit.providers.basicaer import BasicAer
 from qiskit.providers.ibmq import IBMQBackend
 from qiskit.transpiler import Target, InstructionProperties, QubitProperties
 from qiskit.providers.fake_provider import FakeBackendV2
-from qiskit.providers.backend import BackendV2
+from qiskit.providers.backend import Backend, BackendV2
 from qiskit.providers.options import Options
 from qiskit.exceptions import QiskitError
 from qiskit_ibm_provider.ibm_qubit_properties import IBMQubitProperties
@@ -18,13 +18,10 @@ from qiskit.circuit import Measure, Parameter, Delay, Reset
 from qiskit.compiler.transpiler import target_to_backend_properties
 
 
-# TODO: Make BackendSpec.new_backend() work with parameter gates
-
+# TODO: Make it so users do not have to flag data added by hand
 
 pd.options.mode.chained_assignment = None  # default='warn'
-#TODO:
-#   - Generalize scrapper to go from parent input to parent(s)
-#   - Make it so that numpy arrays are used for lists
+
 
 class BackendSpec:
     def __init__(self, parent=None):
@@ -252,81 +249,82 @@ class BackendSpec:
             self._gate_properties[key] = self._gate_properties[key].apply(lambda x: x[0] if isinstance(x, tuple) else x)
 
     
-### Gettter
+### Getter
     @property
-    def qubit_properties(self):
+    def qubit_properties(self) -> pd.DataFrame:
         return self._qubit_properties
 
     @property
-    def gate_properties(self):
+    def gate_properties(self) -> pd.DataFrame:
         return self._gate_properties
-
-    @property
-    def num_qubits(self):
-      return self._num_qubits
     
     @property
     def bidirectional(self):
         return self._bidirectional
 
     @property
-    def max_circuits(self):
+    def max_circuits(self) -> int:
         return self._max_circuits
 
     @property
-    def edge_list(self):
+    def edge_list(self) -> list[tuple[int, int]]:
         return self._edge_list
 
     @property
-    def coupling_map(self):
+    def coupling_map(self) -> CouplingMap:
         return self._coupling_map
 
     @property
-    def coupling_type(self):
+    def coupling_type(self) -> str:
         return self._coupling_type
 
     @property
-    def dt(self):
+    def dt(self) -> float:
         return self._dt
 
     @property
-    def basis_gates(self):
+    def basis_gates(self) -> list[str]:
         return self._basis_gates
 
     @property
-    def dtm(self):
+    def dtm(self) -> float:
         return self._dtm
 
     @property
-    def num_qubits(self):
+    def num_qubits(self) -> int:
         return self._num_qubits
 
     @property
-    def num_qubits(self):
-        return self._num_qubits
-    @property
-    def num_qubits(self):
-        return self._num_qubits
-
-    @property
-    def qubit_flag(self):
+    def qubit_flag(self) -> pd.DataFrame:
         return self._qubit_flag
 
     @property
-    def gate_flag(self):
+    def gate_flag(self) -> pd.DataFrame:
         return self._gate_flag
     
     @property
-    def seed(self):
+    def seed(self) -> float:
         return self._seed
 
+    def get_qubit_property(self, qubit: int, qubit_property: str) -> float:
+      """Get `qubit_property` of `qubit` from `self.qubit_properties`
+    
+        Parameters
+        ----------
+        
+        qubit : int
+        The integer id of the qubit in the coupling map and `self.qubit_properties` DataFrame.
 
-
-    def get_qubit_property(self, qubit, qubit_property):
+        qubit_property: str
+        The specific qubit property to retrieve from `self.qubit_properties`
+        
+        Returns the specified `qubit_property` 
+        float
+        """
       return self._qubit_properties[qubit_property][qubit]
 
 
-    def get_gate_property(self, gate_name, qubits, gate_property):
+    def get_gate_property(self, gate_name : str, qubits : Union[int, tuple], gate_property: str) -> str:
       temp_df = pd.DataFrame(self._gate_properties)
       temp_df = temp_df[temp_df["gate"] == gate_name]
       if gate_name in self._two_qubit_lut:
@@ -338,7 +336,7 @@ class BackendSpec:
 
       return self._gate_properties[gate_property][property_index]
 
-    def qubit_selector(self, property, lower_bound, upper_bound):
+    def qubit_selector(self, property: str, lower_bound : Union[int, float], upper_bound: Union[int, float]):
         qubit_indices = []
         for i in range(len(self._qubit_properties.index)):
             if self._qubit_properties[property][i] >= lower_bound and self._qubit_properties[property][i] <= upper_bound:
@@ -347,12 +345,12 @@ class BackendSpec:
         return qubit_indices
 
 
-    def from_backend(self, parent):
+    def from_backend(self, parent : Union[Backend, BackendV2])# Union[qiskit.providers.Backend, qiskit.providers.BackendV2]):
         self.__init__(parent)
         
  # Modifiers
 
-    def increase_qubits(self, increase_amount, coupling_type):
+    def increase_qubits(self, increase_amount : int, coupling_type: str):
         
         if increase_amount < 0:
             raise ValueError("Please provide a number greater than zero. To decrease see self.decrease_qubits(decrease_amount, coupling_type)")
@@ -362,7 +360,7 @@ class BackendSpec:
         
 
 
-    def decrease_qubits(self, decrease_amount, coupling_type):
+    def decrease_qubits(self, decrease_amount: int, coupling_type: str):
         if decrease_amount > 0:
             raise ValueError("Please provide a number less than zero. To increase see self.increase_qubits(increase_amount, coupling_type)")
         self._num_qubits += decrease_amount
@@ -370,7 +368,7 @@ class BackendSpec:
 
 # Methods for coupling changes 
 
-    def coupling_change(self, coupling_type):
+    def coupling_change(self, coupling_type: str):
         self._coupling_type = coupling_type
         num_qubits = self._num_qubits
         
@@ -452,7 +450,7 @@ class BackendSpec:
     
     
 
-    def _generate_couple(self, num_qubits, coupling_type):
+    def _generate_couple(self, num_qubits: int, coupling_type: str) -> CouplingMap:
         updated_map = CouplingMap()
         graph = None
 
@@ -515,10 +513,10 @@ class BackendSpec:
 
     
 
-    def scale_qubit_property(self, property_key, scale_factor):
+    def scale_qubit_property(self, property_key:str, scale_factor:float):
         self._qubit_properties[property_key] *= scale_factor
 
-    def scale_gate_property(self, gate_name, property_key, scale_factor):
+    def scale_gate_property(self, gate_name:str, property_key:str, scale_factor:float):
         selection = self._gate_properties[self._gate_properties.gate==gate_name]
         selection[property_key] *= scale_factor
 
