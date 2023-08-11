@@ -642,7 +642,7 @@ class BackendSpec:
 
         Args:
             property_key (str): The qubit property to scale.
-        scale_factor (float): The factor to scale properties by.
+            scale_factor (float): The factor to scale properties by.
         """
         self._qubit_properties[property_key] *= scale_factor
 
