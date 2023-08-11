@@ -3,7 +3,9 @@
 
 ________________
 
-There are many aspects of IBM Quantum backends that require meticulous testing with the transpiler. The purpose of BackendSpec is to provide a framework for generating highly customized backends that can be used for more diverse testing methods. This framework would allow for exploring new hardware architectures with different coupling schemes, qubit types, qubit specific basis gates and  noise aware transpilation.
+There are many aspects of IBM Quantum backends that require meticulous testing with the transpiler. The purpose of BackendSpec is to provide a framework for generating highly customized backends that can be used for more diverse testing methods. This framework would allow for exploring new hardware architectures with different coupling schemes, qubit types, qubit specific basis gates and  noise aware transpilation. The overall flow of the framework is shown here:
+
+![Framework](https://drive.google.com/file/d/1HKytMdon5ePxUF697L7sq0fdvWHmZx0o/view?usp=drive_link "Optional title")
 
 Below are a few tutorials explaining the various features of BackendSpec, including initialization and different use cases.
 
@@ -28,7 +30,7 @@ There are two ways to initialize a BackendSpec object:
     ```
     In this case, the BackendSpec object will be initialized with 2 qubits, and the rest of the qubit and gate properties will be empty. These properties can then be populated with the built-in modifier functions, that are assisted by sampling functions that sample values from a distribution corresponding to the attributes of QubitProperties and GateProperties.
 
-    After the initialization, the BackendSpec undergoes three separate processes to create a backend to be passed into the transpiler. 
+    After the initialization, the BackendSpec undergoes three separate processes to create a backend to be passed into the transpiler.
 
     ### Loaders
 
@@ -80,6 +82,16 @@ There are two ways to initialize a BackendSpec object:
     The sampler functions help generate values for  `QubitProperties` and `GateProperties` attributes, either with respect to a probability distribution with a provided mean and standard deviation, or directly with pre-determined values. The values themselves can also be individually changed within the DataFrames. 
 
     After the BackendSpec is passed through the loader, modifiers, and samplers, a FakeBackendV2 object is created from the new information, and is then passed into the transpiler. 
+
+    ## Description of Data Structures
+
+    The `QubitProperties` and `GateProperties` are stored in Pandas `DataFrames`. as seen below:
+
+    ![QubitProperties](https://drive.google.com/file/d/10uO9iFV4uQfeYKOaJPw1yQ4gDR68kJoz/view?usp=drive_link "Optional title")
+
+    ![GateProperties](https://drive.google.com/file/d/1znyv8mm9ScONt-5IZi5jpyn4thQJXtOq/view?usp=drive_link "Optional title")
+
+    The `DataFrames` allow for the backend data to be more streamlined and accessible. 
 
     ## Example Code
 
