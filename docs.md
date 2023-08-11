@@ -113,12 +113,15 @@ When creating a new backend the user can either generate new instruction and qub
 
 An example of this is creating an empty backend and setting all T1 times to 100Âµs. We can freeze these qubit properties (using` BackendSpec.set_frozen_qubit_property`), the resulting backend from `BackendSpec.new_backend()` will have qubits with T1 times of 100Âµs. (Rather than T1 times around 100Âµs if they were non-frozen properties)
 
+# Methods
+
 ## Load methods:
 - `BackendSpec(parent)`
     - Loads parent data into BackendSpec
 - `BackendSpec.from_parent(parent)`
     - Loads parent data into BackendSpec
 
+---
 ## Modifiers:
 ### Basis gates:
 - `add_basis_gate_distribution(new_gate, distribution_error, distribution_length, freeze_property = False)`
@@ -140,7 +143,7 @@ An example of this is creating an empty backend and setting all T1 times to 100Â
     - Replaces `old_gate` with `new_gate` in internal properties and basis gates. Generates instruction properties using distribution provided. Both distribution arguments are expected to be formatted `distribution_xxx` = [`std_xxx`, `mean_xxx`].Allows for freezing of new properties. *Only intended for two qubit gates.*
 - `swap_2q_basis_gate_numeric`
     - Replaces `old_gate` with `new_gate` in internal properties and basis gates. Uses provided property values to set new instruction properties. Allows for freezing of new properties. *Only intended for two qubit gates.*
-
+---
 ### Coupling Map (num_qubits)
 - `coupling_change(coupling_type)`
     - Uses provided `coupling_type` to generate new coupling map with at minimum qubits as the number of qubits initially.
@@ -150,11 +153,13 @@ An example of this is creating an empty backend and setting all T1 times to 100Â
     - Replaces spec coupling map with a coupling map with at least `BackendSpec.num_qubits + decrease_amount` qubits. Regenerates internal properties dataframes with distribution based on initial internal properties dataframes. *decrease_amount must be negative*
 - `set_coupling_map(coupling_map, coupling_type)`
     - Replaces internal coupling map, number of qubits, coupling type and resets all frozen properties. Also causes internal dataframe properties to be resampled.
+---
 ### Scale
 - `scale_gate_property(gate_name, property_key, scale_factor)`
     - Scales all gate's property with key:`property_key` and name:`gate_name` by `scale_factor`
 - `scale_qubit_property(property_key, scale_factor)`
     - Scales all of the qubit's property: `property_key` by `scale_factor`
+---
 ### Setters
 #### Properties
 - `set_bidirectional(bidirectional)`
@@ -187,3 +192,11 @@ An example of this is creating an empty backend and setting all T1 times to 100Â
     - Sets the specified qubits (`qubits`) `qubit_property` to `values`. Allows for Freezing of new properties.
 - `set_qubits_properties_distribution(qubits,  qubit_property, std, mean, freeze_property = False)`
     - Sets the specified qubits (`qubits`) `qubit_property` to values sampled from distribution based on argument `std` and `mean` values.
+---
+## Sampler
+- `sample_distribution(std, mean, count)`
+    - Returns `np.array` of size count with values sampled from distribution based off input `std` and `mean`
+
+### Backend Generation
+- `new_backend()`
+    - Returns `FakeBackendV2` object with target and coupling map objects based on BackendSpec properties.

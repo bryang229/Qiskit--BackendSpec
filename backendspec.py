@@ -1283,8 +1283,8 @@ class BackendSpec:
         distribution.
     
         Args:
-            mean (float): Mean of the distribution.
             std (float): Standard deviation of the distribution.
+            mean (float): Mean of the distribution.
             count (int): number of samples that will be generated.
 
         sampled_distribution (np.ndarray): Numpy array containing sampled values using distribution provided by user"""
