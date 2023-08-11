@@ -1,5 +1,6 @@
 from qiskit import QuantumCircuit, transpile
 from backendspec import BackendSpec
+from tests import TestBackendSpec
 
 spec = BackendSpec()
 
@@ -8,19 +9,36 @@ qc.x(0)
 qc.cx(0,1)
 qc.h(1)
 
+test = TestBackendSpec()
+test.test_add_basis_gate_distribution()
+test.test_add_basis_gate_numeric()
+test.test_coupling_change()
+test.test_increase_qubits()
+test.test_decrease_qubits()
+test.test_get_gate_property()
+test.test_get_qubit_property()
+test.test_new_backend()
+test.test_qubit_selector()
+test.test_remove_basis_gate()
+test.test_scale_gate_property()
+test.test_scale_qubit_property()
+test.test_set_bidirectional()
+test.test_set_coupling_map()
+test.test_set_dt()
+test.test_set_frozen_gate_property()
+test.test_set_frozen_gates_property()
+test.test_set_frozen_qubit_property()
+test.test_set_frozen_qubits_property()
+test.test_set_gate_properties()
+test.test_set_gate_property()
+test.test_set_max_circuits()
+test.test_set_multi_qubit_property()
+test.test_set_qubit_property()
+test.test_set_qubits_properties_distribution()
+test.test_set_seed()
+test.test_swap_2q_basis_gate()
+test.test_swap_2q_basis_gate_distribution()
+test.test_swap_2q_basis_gate_numeric()
+test.test_swap_basis_gate_distribution()
+test.test_swap_basis_gate_numeric()
 
-spec.increase_qubits(10, 'hexagonal')
-spec.set_gate_property('id', 'gate_error', 0, .01, True)
-spec.set_gate_properties_distribution('id', 'gate_error', .001, .3, True)
-spec.swap_basis_gate('x', 'y', True)
-spec.swap_2q_basis_gate_distribution('cx','ecr',[.01, .1], [1e-7]*2)
-spec.scale_gate_property('y', 'gate_error', 2)
-
-
-
-# backend = spec.new_backend()
-# print(backend.gates_df.loc[backend.gates_df.gate == 'id'])
-
-# transpiled = transpile(qc, backend, basis_gates=spec.basis_gates)
-# print(transpiled)
-# print(spec.qubit_properties)

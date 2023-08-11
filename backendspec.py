@@ -85,13 +85,11 @@ class BackendSpec:
                                             "frequency": [0,0],
                                             "anharmonicity": [0,0],
                                             "readout_error": [0,0],
-                                            "prob_meas0_prep1": [0,0],
-                                            "prob_meas1_prep0": [0,0],
                                             "readout_length": [0,0]
                                             })
         
-        self._gate_properties = pd.DataFrame({"gate": ['x', 'sx', 'rz', 'id', 'x', 'sx', 'rz', 'id','cx', 'cx', 'reset', 'reset'],
-                                        "qubits": [0, 0, 0, 0,  1, 1, 1 ,1, (0,1), (1,0), 0, 1],
+        self._gate_properties = pd.DataFrame({"gate": ['x', 'x', 'sx', 'sx', 'cx', 'cx', 'rz', 'rz','id', 'id', 'reset', 'reset'],
+                                        "qubits": [0, 1, 0, 1, 0, 1, (0,1), (1,0),0 ,1, 0, 1],
                                         "gate_error": [0] *  12,
                                         "gate_length": [0] * 12
                                         })
@@ -340,8 +338,8 @@ class BackendSpec:
         """Return the `num_qubits`
 
         Returns: 
-            num_qubits: The number of physical qubits
-        return self._num_qubits"""
+            num_qubits: The number of physical qubits"""
+        return self._num_qubits
 
 
     # TO CHANGE
@@ -369,7 +367,7 @@ class BackendSpec:
             seed: The seed used for property sampling"""
         return self._seed
 
-    def get_qubit_property(self, qubit: int, qubit_property: str) -> float:
+    def get_qubit_property(self,qubit: int, qubit_property: str) -> float:
       """Get `qubit_property` of `qubit` from `self.qubit_properties`.
     
         Args:   
@@ -382,7 +380,7 @@ class BackendSpec:
       return self._qubit_properties[qubit_property][qubit]
 
 
-    def get_gate_property(self, gate_name : str, qubits : Union[int, tuple[int, int]], gate_property: str) -> str:
+    def get_gate_property(self, gate_name : str, gate_property: str, qubits : Union[int, tuple[int, int]]) -> float:
         """Get `gate_property` of gate with `gate_name`   from `self.gate_properties`.
         
         Args:
@@ -393,12 +391,10 @@ class BackendSpec:
         Returns: 
             gate_property: The specified `gate_property`.
         """
+        qubits = tuple(qubits) if gate_name in self._two_qubit_lut else qubits
+
         temp_df = pd.DataFrame(self._gate_properties)
         temp_df = temp_df[temp_df["gate"] == gate_name]
-        if gate_name in self._two_qubit_lut:
-            temp_df = temp_df[temp_df["qubits"] == qubits]
-        else:
-            temp_df = temp_df[temp_df["qubits"] == tuple(qubits)]
 
         property_index = temp_df.index[0]
 
@@ -653,7 +649,8 @@ class BackendSpec:
             property_key (str): The qubit property to scale.
             scale_factor (float): The factor to scale properties by.
         """
-        self._gate_properties.loc[self._gate_properties.gate==gate_name, property_key][:] = scale_factor 
+        scale = self._gate_properties.loc[self._gate_properties.gate==gate_name, property_key]
+        self._gate_properties.update(scale * scale_factor)
 
 
 ### Setters:
@@ -673,7 +670,7 @@ class BackendSpec:
             raise KeyError(f"Gate: {gate_name} with property: {gate_property} not found")
 
 
-    def set_frozen_gate_property(self, frozen: str, gate_name: str, gate_property: str, qubits: Union[int, list[int, int]]):
+    def set_frozen_gate_property(self, frozen: bool, gate_name: str, gate_property: str, qubits: Union[int, list[int, int]]):
         """Sets frozen for gate property to be static (or values to not be sampled for in backend generation).
         
         Args:
@@ -687,11 +684,9 @@ class BackendSpec:
             qubits = tuple(qubits) if gate_name in self._two_qubit_lut else qubits
             temp_df = self._frozen_gate_properties.loc[self._frozen_gate_properties["gate"] == gate_name]
             
-            temp_df = temp_df.loc[temp_df["qubits"] == qubits]
-
-            property_index = temp_df.index[0]
+            property_index = temp_df.loc[temp_df["qubits"] == qubits, gate_property].index[0]
             
-            self._frozen_gate_properties.loc[gate_property, property_index] = frozen
+            self._frozen_gate_properties.loc[property_index, gate_property] = frozen
         except:
             raise KeyError(f"Gate: {gate_name} with qubits: {str(qubits)} and property: {gate_property} not found")
         
@@ -754,7 +749,7 @@ class BackendSpec:
             value (float): Value to be set
             freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
         
-        self._qubit_properties[qubit_property][qubit_id] = value
+        self._qubit_properties.loc[qubit_id, qubit_property] = value
         if freeze_property:
             self.set_frozen_qubit_property(True, qubit_property, qubit_id)
 
@@ -780,12 +775,9 @@ class BackendSpec:
             values (list[float]): list of values to be set
             freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
 
-        # temp_df = self._gate_properties[self._gate_properties.gate == gate_name]
-        # temp_df[gate_property].values[:] = values
-
-        self._gate_properties.loc[self._gate_properties.gate == gate_name, gate_property][:] = values
-        
-        # self._gate_properties.update(temp_df)
+        temp_df = self._gate_properties[self._gate_properties.gate == gate_name]
+        temp_df[gate_property].values[:] = values
+        self._gate_properties.update(temp_df)
 
         if freeze_property:
             self.set_frozen_gates_property(True, gate_name, gate_property)
@@ -801,11 +793,9 @@ class BackendSpec:
             freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
         qubits = tuple(qubits) if gate_name in self._two_qubit_lut else qubits
 
-        temp_df = self._gate_properties.loc[self._gate_properties["gate"] == gate_name]
-        temp_df = temp_df[temp_df["qubits"] == qubits]
-
-        property_index = temp_df.index[0]
-        self._gate_properties.loc[gate_property,property_index] = value
+        temp_df = self._gate_properties.loc[self._gate_properties.gate==gate_name]
+        index = temp_df.loc[temp_df.qubits == qubits, 'gate_error'].index[0]
+        self._gate_properties.loc[index, 'gate_error'] = value
 
         if freeze_property:
             self.set_frozen_gate_property(True, gate_name, gate_property, qubits)
@@ -889,8 +879,8 @@ class BackendSpec:
 
         self._gate_properties = pd.concat((self._gate_properties, temp_df), ignore_index= True, sort= False)
 
-        temp_df['gate_error'][:] = freeze_property
-        temp_df['gate_length'][:] = freeze_property
+        temp_df['gate_error'].values[:] = freeze_property
+        temp_df['gate_length'].values[:] = freeze_property
         self._basis_gates.append(new_gate) 
         self._frozen_gate_properties = pd.concat((self._frozen_gate_properties, temp_df), ignore_index= True, sort= False)
 
@@ -921,8 +911,8 @@ class BackendSpec:
 
         self._gate_properties = pd.concat((self._gate_properties, temp_df), ignore_index= True, sort= False)
 
-        temp_df['gate_error'][:] = freeze_property
-        temp_df['gate_length'][:] = freeze_property 
+        temp_df['gate_error'].values[:] = freeze_property
+        temp_df['gate_length'].values[:] = freeze_property 
         self._frozen_gate_properties = pd.concat((self._frozen_gate_properties, temp_df), ignore_index= True, sort= False)
         self._basis_gates.append(gate_name)
 
@@ -1432,8 +1422,8 @@ class BackendSpec:
         qubits_df, gates_df = self._apply_freeze(self._sample_props())
 
         basis_gates = list(self._basis_gates)
-        new_backend.qubits_df = qubits_df
-        new_backend.gates_df = gates_df
+        # new_backend.qubits_df = qubits_df
+        # new_backend.gates_df = gates_df
         
         _target = self._gen_target(qubits_df)
 
