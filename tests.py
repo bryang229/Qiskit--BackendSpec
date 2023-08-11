@@ -3,6 +3,7 @@ from backendspec import BackendSpec
 import unittest
 from qiskit.compiler.transpiler import CouplingMap
 from qiskit.providers.fake_provider import FakeBackendV2
+from scipy.stats import shapiro 
 
 
 
@@ -49,10 +50,20 @@ class TestBackendSpec(QiskitTestCase):
         spec = BackendSpec()
 
         old_cmap = spec.coupling_map
+        old_qubits = spec.num_qubits
+
         spec.coupling_change('square')
+
         new_cmap = spec.coupling_map
+        new_qubits = spec.num_qubits
 
         self.assertNotEqual(old_cmap, new_cmap)
+
+        # what if the config passed in has a square number of qubits (edge case?)
+        if (new_qubits == old_qubits):
+            self.assertEqual(new_qubits, old_qubits)
+
+        self.assertGreater(new_qubits, old_qubits) # ideally square should have more qubits always
 
 
     def test_decrease_qubits(self):
@@ -104,9 +115,19 @@ class TestBackendSpec(QiskitTestCase):
         spec.remove_basis_gate('id')
         self.assertFalse('id' in spec.basis_gates)
 
-    # TODO:
-    # def test_sample_distribution(self):
-    #     spec = BackendSpec()
+    def test_sample_distribution(self):
+        spec = BackendSpec()
+
+        spec.increase_qubits(5, 'square')
+        val = spec.sample_distribution(0.05, 0.12, spec.num_qubits)
+
+        # since this is coming from rvs norm we can set a 95% confidence interval
+        # and use shapiro-wilk to verify its > 0.05 to show normal dist behaviour
+        verify = shapiro(val).pvalue
+
+        # print(verify)
+
+        self.assertGreater(verify, 0.05)
         
     def test_scale_gate_property(self):
         spec = BackendSpec()
@@ -134,7 +155,7 @@ class TestBackendSpec(QiskitTestCase):
         init_num_qubits = spec.num_qubits
         init_c_map = spec.coupling_map
 
-        new_map = CouplingMap.from_hexagonal_lattice(1,1)
+        new_map = CouplingMap.from_hexagonal_lattice(1,1) # 6 qubit lattice
         spec.set_coupling_map(new_map, 'hexagonal')
 
         new_num_qubits = spec.num_qubits
