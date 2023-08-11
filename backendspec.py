@@ -642,7 +642,7 @@ class BackendSpec:
 
         Args:
             property_key (str): The qubit property to scale.
-        scale_factor (float): The factor to scale properties by.
+            scale_factor (float): The factor to scale properties by.
         """
         self._qubit_properties[property_key] *= scale_factor
 
@@ -784,13 +784,13 @@ class BackendSpec:
             self.set_frozen_gates_property(True, gate_name, gate_property)
 
     def set_gate_property(self, gate_name: str, gate_property: str, qubits: Union[int, tuple[int, int]], value: list[Union[int, float]], freeze_property: bool = False):
-        """Sets gate property values of specific gates under gate type
+        """Sets `gate_property` of `gate_name` acting on `qubits` to `value`. 
         
         Args:
             gate_name (str): Name of gate.
             gate_property (str): Gate property to be set.
             qubits (int | list[int, int]): Qubits that the gate is applied to (specification of gates to set)
-            values (list[float]): list of values to be set
+            value (int | float): value to be set
             freeze_property (bool): `Optional`, when set true set value will be frozen as static value (to not be resampled upon generation)"""
         qubits = tuple(qubits) if gate_name in self._two_qubit_lut else qubits
 
@@ -832,7 +832,7 @@ class BackendSpec:
             std (float): Standard deviation of distribution.
             mean (float): Mean of distribution.
             freeze_property (bool): `Optional`, when set true set value will be frozen as static value (to not be resampled upon generation)"""
-        vals = self.sample_distribution(std, mean, self._num_qubits)
+        vals = self.sample_distribution(std, mean, len(vals))
         self.set_multi_qubit_property(qubits, qubit_property, vals)
 
         if freeze_property:
