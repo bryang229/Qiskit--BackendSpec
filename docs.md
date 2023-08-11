@@ -166,17 +166,24 @@ An example of this is creating an empty backend and setting all T1 times to 100Â
 - `set_seed(seed)`
     - Sets seed used for distribution generation and sampling
 #### Freeze/Unfreeze Properties
-- `set_frozen_gate_property(frozen, gate_name, gate_property, qubits`
-    - 
-- `set_frozen_gates_property`
-    - 
-- `set_frozen_qubit_property`
-- `set_frozen_qubits_property`
-#### DataFrames
-- `set_gate_properties`
-- `set_gate_properties_distribution`
-- `set_gate_property`
-- `set_multi_qubit_property`
-- `set_qubit_property`
-- `set_qubits_properties_distribution`
-
+- `set_frozen_gate_property(frozen, gate_name, gate_property, qubits)`
+    - Freezes/Unfreezes specific gate property acting on `qubits` 
+- `set_frozen_gates_property(frozen, gate_name, gate_property)`
+    - Freezes/Unfreezes all `gate_property` values.
+- `set_frozen_qubit_property(frozen, qubit_property, qubit_id)`
+    - Freezes/Unfreezes specific qubit property on specific qubit.
+- `set_frozen_qubits_property(frozen, qubit_property)`
+    - Freezes/Unfreezes all `qubit_property` values.
+#### Set Properties (DataFrame)
+- `set_gate_property(gate_name, gate_property, qubits, value, freeze_property = False)`
+    - Sets `gate_property` of `gate_name` acting on `qubits` to `value`. Allows for Freezing of new properties.
+- `set_gate_properties(gate_name, gate_property, qubits, values, freeze_property = False)`
+    - Sets all `gate_property` of `gate_name` to `values`. Allows for Freezing of new properties.
+- `set_gate_properties_distribution(gate_name, gate_property, std, mean, freeze_property = False)`
+    - Sets all `gate_property` of `gate_name` to values generated values using distribution based on `std` and `mean` arguments. Allows for Freezing of new properties.
+- `set_qubit_property(qubit_id, qubit_property, value, freeze_property = False)`
+    - Sets the specific qubit's (`qubit_id`) `qubit_property` to `value`. Allows for Freezing of new properties.
+- `set_multi_qubit_property(qubits, qubit_property , values, freeze_property = False)`
+    - Sets the specified qubits (`qubits`) `qubit_property` to `values`. Allows for Freezing of new properties.
+- `set_qubits_properties_distribution(qubits,  qubit_property, std, mean, freeze_property = False)`
+    - Sets the specified qubits (`qubits`) `qubit_property` to values sampled from distribution based on argument `std` and `mean` values.
