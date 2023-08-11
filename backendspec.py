@@ -811,7 +811,13 @@ class BackendSpec:
             freeze_property (bool): Optional, when set true set value will be frozen as static value (to not be resampled upon generation)"""
         count = len(self._edge_list) if gate_name in self._two_qubit_lut else self._num_qubits
         vals = self.sample_distribution(std, mean, count)
-        self.set_gate_properties(gate_name, gate_property, vals)
+        
+
+        temp_df = self._gate_properties[self._gate_properties.gate == gate_name]
+        i=0
+        for q in temp_df.qubits:
+            self.set_gate_property(gate_name, gate_property, q, float(vals[i]))
+            i+=1
 
         if freeze_property:
             self.set_frozen_gates_property(True, gate_name, gate_property)
