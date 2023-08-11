@@ -1,81 +1,95 @@
-To be removed soon
+# Framework for Generating Experimental Backends (BackendSpec)
+### Bryan Bonilla Garay, Matthew Figueroa, Vea Iyer
 
-'_apply_flags',
- '_basis_gates',
- '_bidirectional',
- '_coupling_map',
- '_coupling_type',
- '_dt',
- '_dtm',
- '_edge_list',
- '_gate_flag',
- '_gate_properties',
- '_gen_flag_df',
- '_gen_inst_props',
- '_gen_target',
- '_generate_couple',
- '_load_IBM',
- '_load_IBMQ',
- '_load_base',
- '_load_data',
- '_load_edges',
- '_load_fake_data',
- '_max_circuits',
- '_num_qubits',
- '_qubit_flag',
- '_qubit_properties',
- '_sample_gates',
- '_sample_props',
- '_sample_qubits',
- '_seed',
- '_tuple_remover',
- '_two_qubit_lut',
- 'add_basis_gate_dist',
- 'add_basis_gate_numeric',
- 'basis_gates',
- 'bidirectional',
- 'coupling_change',
- 'coupling_map',
- 'coupling_type',
- 'decrease_qubits',
- 'dt',
- 'dtm',
- 'edge_list',
- 'from_backend',
- 'gate_flag',
- 'gate_properties',
- 'get_gate_property',
- 'get_qubit_property',
- 'increase_qubits',
- 'max_circuits',
- 'new_backend',
- 'num_qubits',
- 'qubit_flag',
- 'qubit_properties',
- 'qubit_selector',
- 'remove_basis_gate',
- 'sample_dist',
- 'scale_gate_property',
- 'scale_qubit_property',
- 'seed',
- 'set_bidirectional',
- 'set_coupling_map',
- 'set_dt',
- 'set_flag_gate_property',
- 'set_flag_gates_property',
- 'set_flag_qubit_property',
- 'set_flag_qubits_property',
- 'set_gate_properties',
- 'set_gate_properties_dist',
- 'set_gate_property',
- 'set_max_circuits',
- 'set_qubit_properties',
- 'set_qubit_property',
- 'set_qubits_properties_dist',
- 'set_seed',
- 'swap_2q_basis_gate',
- 'swap_2q_basis_gate_dist',
- 'swap_2q_basis_gate_numeric',
- 'swap_basis_gate',
- 'swap_basis_gate_dist',
- 'swap_basis_gate_numeric'
+________________
+
+There are many aspects of IBM Quantum backends that require meticulous testing with the transpiler. The purpose of BackendSpec is to provide a framework for generating highly customized backends that can be used for more diverse testing methods. This framework would allow for exploring new hardware architectures with different coupling schemes, qubit types, qubit specific basis gates and  noise aware transpilation.
+
+Below are a few tutorials explaining the various features of BackendSpec, including initialization and different use cases.
+
+## Initialization
+
+There are two ways to initialize a BackendSpec object:
+
+1. A BackendSpec based off of an existing IBM/IBMQ Backend:
+
+    ```
+    IBMProvider.save_account('your_API_token')
+    provider = IBMProvider()    
+    parent_backend = provider.get_backend('ibm_backend')
+    backend_spec = BackendSpec(parent_backend)
+    ```
+
+    This will return a BackendSpec object consisting of the qubit and gate properties of the specified IBM backend.
+
+2. An empty BackendSpec with specifications to be added:
+    ```
+    backend_spec = BackendSpec()
+    ```
+    In this case, the BackendSpec object will be initialized with 2 qubits, and the rest of the qubit and gate properties will be empty. These properties can then be populated with the built-in modifier functions, that are assisted by sampling functions that sample values from a distribution corresponding to the attributes of QubitProperties and GateProperties.
+
+    After the initialization, the BackendSpec undergoes three separate processes to create a backend to be passed into the transpiler. 
+
+    ### Loaders
+
+    The loaders are used to retrieve data to create the BackendSpec objects. There are four main types of loaders:
+    
+    - IBM: current IBM backend version
+    - IBMQ: former IBM backend version (pre-migration)
+    - `FakeBackendV2`: Object for FakeBackends
+    - Base: empty `BackendSpec` object with no specifications
+
+    The loaders are called in their specific initialization functions, and accordingly load the QubitProperties and GateProperties as DataFrames. 
+
+    ### Modifiers
+
+    `QubitProperties` and `GateProperties` objects contain the majority of information regarding any generated backend. `QubitProperties` consist of various properties associated with qubits, such as:
+
+    - T1 rates (dechoerence)
+    - T2 rates (loss of phase)
+    - Frequency
+    - Anharmonicity
+    - Readout errors
+    - Readout lengths
+
+    `GateProperties` consist of properties associated with single and multi-qubit gates, such as:
+
+    - Gate errors
+    - Gate lengths
+
+    The modifer functions allow for these properties to be selected, flagged, and changed. 
+
+    ### Samplers
+
+    Since there are a variety of qubit and gate properties, they can be modelled using a normal distribution, which generate about 10000 samples per attribute. Then, the corresponding number of values for the `QubitProperties` and `GateProperties` are chosen using a uniform random distribution. The sampled values are fed into the respective DataFrames, and are used when the modifiers are called. This is especially useful when more qubits are introduced in the backend, or if the backend is being newly generated. 
+
+    The sampler functions help generate values for  `QubitProperties` and `GateProperties` attributes, either with respect to a probability distribution with a provided mean and standard deviation, or directly with pre-determined values. The values themselves can also be individually changed within the DataFrames. 
+
+    After the BackendSpec is passed through the loader, modifiers, and samplers, a FakeBackendV2 object is created from the new information, and is then passed into the transpiler. 
+
+    ## Example Code
+
+    Following are some examples applications of BackendSpec.
+
+    #### Creating and transpiling a BackendSpec from an existing backend
+
+    ```
+    IBMProvider.save_account('your_API_token')
+    provider = IBMProvider()    
+    parent_backend = provider.get_backend('ibm_backend')
+
+    spec = BackendSpec(parent_backend)
+
+    # increase qubits to 10
+    spec.increase_qubits(1, 'hexagonal')
+
+    # get circuit ready for transpiling
+    qc = QuantumCircuit(spec.num_qubits,spec.num_qubits)
+    qc.x(0)
+    qc.cx(0,1)
+    qc.h(1)
+
+    backend = spec.new_backend()
+
+    plot_error_map(backend)
+    ```
