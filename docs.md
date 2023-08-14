@@ -1,5 +1,6 @@
 # Framework for Generating Experimental Backends (BackendSpec)
-### Bryan Bonilla Garay, Matthew Figueroa, Vea Iyer
+
+A BackendSpec will empower the user to create unique, custom backends for testing purposes
 
 ________________
 
