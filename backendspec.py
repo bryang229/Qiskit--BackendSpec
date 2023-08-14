@@ -490,15 +490,11 @@ class BackendSpec:
         Args:
             coupling_type (str): The coupling scheme to create coupling map.
         
-        Returns: 
-            Image: A rgb image of the CouplingMap object. (CouplingMap.draw() object)
-        
         - Note: The `num_qubits` could change after this function, the frozen properties will reset along with the properties being resampled.
         """
         self._coupling_type = coupling_type
         num_qubits = self._num_qubits
         
-        rgb = None
         updated_map = CouplingMap()
         graph = None
 
@@ -526,11 +522,6 @@ class BackendSpec:
                         graph.remove_node(i)
                         num_graph_qubits -= 1
 
-            rgb = hex_map.draw()
-            rgb = rgb.convert("RGB")
-            
-
-
 
         elif (coupling_type == 'square'):
 
@@ -538,9 +529,6 @@ class BackendSpec:
             square_map = updated_map.from_grid(row, row, bidirectional=self._bidirectional)
 
             graph = square_map.graph
-            rgb = square_map.draw()
-            rgb = rgb.convert("RGB")
-
 
         elif (coupling_type == 'grid'):
 
@@ -550,16 +538,11 @@ class BackendSpec:
             grid_map = updated_map.from_grid(row, col, bidirectional=self._bidirectional)
             graph = grid_map.graph
 
-            rgb = grid_map.draw()
-            rgb = rgb.convert("RGB")
-            
 
         elif (coupling_type == 'ata'):
 
             ata_map = updated_map.from_full(num_qubits, bidirectional=self._bidirectional)
             graph = ata_map.graph
-            rgb = ata_map.draw()
-            rgb = rgb.convert("RGB")
 
         else:
             raise LookupError("Please use a valid coupling type such as: hexagonal, square, ata or grid")
@@ -571,8 +554,6 @@ class BackendSpec:
             
         self._qubit_properties, self._gate_properties = self._sample_props()
         self._gen_frozen_props()
-
-        return rgb
     
     
 
@@ -832,7 +813,7 @@ class BackendSpec:
             std (float): Standard deviation of distribution.
             mean (float): Mean of distribution.
             freeze_property (bool): `Optional`, when set true set value will be frozen as static value (to not be resampled upon generation)"""
-        vals = self.sample_distribution(std, mean, len(vals))
+        vals = self.sample_distribution(std, mean, len(qubits))
         self.set_multi_qubit_property(qubits, qubit_property, vals)
 
         if freeze_property:
