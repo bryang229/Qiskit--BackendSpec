@@ -297,7 +297,7 @@ class BackendSpec:
         return self._max_circuits
 
     @property
-    def edge_list(self) -> list[tuple[int, int]]:
+    def edge_list(self) -> "list[tuple[int, int]]":
         """Return the `edge_list`
 
         Returns: 
@@ -334,7 +334,7 @@ class BackendSpec:
         return self._dt
 
     @property
-    def basis_gates(self) -> list[str]:
+    def basis_gates(self) -> "list[str]":
         """Return the `basis_gates`
 
         Returns: 
@@ -394,7 +394,7 @@ class BackendSpec:
       return self._qubit_properties[qubit_property][qubit]
 
 
-    def get_gate_property(self, gate_name : str, gate_property: str, qubits : Union[int, tuple[int, int]]) -> float:
+    def get_gate_property(self, gate_name : str, gate_property: str, qubits : Union[int, "tuple[int, int]"]) -> float:
         """Get `gate_property` of gate with `gate_name`   from `self.gate_properties`.
         
         Args:
@@ -652,7 +652,7 @@ class BackendSpec:
         except:
             raise KeyError(f"Gate: {gate_name} with property: {gate_property} not found")
 
-    def set_frozen_gate_property(self, frozen: bool, gate_name: str, gate_property: str, qubits: Union[int, list[int, int]]):
+    def set_frozen_gate_property(self, frozen: bool, gate_name: str, gate_property: str, qubits: Union[int, "list[int, int]"]):
         """Sets frozen for gate property to be static (or values to not be sampled for in backend generation).
         
         Args:
@@ -735,7 +735,7 @@ class BackendSpec:
         if freeze_property:
             self.set_frozen_qubit_property(True, qubit_property, qubit_id)
 
-    def set_multi_qubit_property(self, qubits: list[int], qubit_property: str, values: list[Union[int, float]], freeze_property :bool = False):
+    def set_multi_qubit_property(self, qubits: "list[int]", qubit_property: str, values: "list[Union[int, float]]", freeze_property :bool = False):
        """Sets qubit property value of specified qubits
         
         Args:
@@ -748,7 +748,7 @@ class BackendSpec:
        if freeze_property:
             self.set_frozen_qubits_property(True, qubit_property, qubits)
 
-    def set_gate_properties(self, gate_name: str, gate_property: str, values: list[Union[int, float]], freeze_property: bool = False):
+    def set_gate_properties(self, gate_name: str, gate_property: str, values: "list[Union[int, float]]", freeze_property: bool = False):
         """Sets all gate property values of specific gate type
         
         Args:
@@ -764,7 +764,7 @@ class BackendSpec:
         if freeze_property:
             self.set_frozen_gates_property(True, gate_name, gate_property)
 
-    def set_gate_property(self, gate_name: str, gate_property: str, qubits: Union[int, tuple[int, int]], value: list[Union[int, float]], freeze_property: bool = False):
+    def set_gate_property(self, gate_name: str, gate_property: str, qubits: Union[int, "tuple[int, int]"], value: "list[Union[int, float]]", freeze_property: bool = False):
         """Sets `gate_property` of `gate_name` acting on `qubits` to `value`. 
         
         Args:
@@ -804,7 +804,7 @@ class BackendSpec:
         if freeze_property:
             self.set_frozen_gates_property(True, gate_name, gate_property)
 
-    def set_qubits_properties_distribution(self, qubits: list[int],  qubit_property: str, std: float, mean: float, freeze_property: bool = False):
+    def set_qubits_properties_distribution(self, qubits: "list[int]",  qubit_property: str, std: float, mean: float, freeze_property: bool = False):
         """Sets gate property values of specific gates using distribution
         
         Args:
@@ -840,7 +840,7 @@ class BackendSpec:
 
     # Methods for basis gates
         
-    def add_basis_gate_distribution(self, new_gate : str, distribution_error : list[float, float], distribution_length : list[float, float], freeze_property: bool = False):
+    def add_basis_gate_distribution(self, new_gate : str, distribution_error : "list[float, float]", distribution_length : "list[float, float]", freeze_property: bool = False):
         """Adds new basis gate with gate errors and gate lengths sampled from distribution.
         
         Args:
@@ -873,7 +873,7 @@ class BackendSpec:
         self._frozen_gate_properties = pd.concat((self._frozen_gate_properties, temp_df), ignore_index= True, sort= False)
 
     
-    def add_basis_gate_numeric(self, gate_name : str, error_vals : list[float], length_vals : list[float], freeze_property: bool = False):
+    def add_basis_gate_numeric(self, gate_name : str, error_vals : "list[float]", length_vals : "list[float]", freeze_property: bool = False):
         """Adds new basis gate with gate errors and gate lengths using provided values.
         
         Args:
@@ -950,7 +950,7 @@ class BackendSpec:
         self._basis_gates.pop(index)
         self._basis_gates.append(new_gate)
 
-    def swap_basis_gate_distribution(self, old_gate : str, new_gate : str, distribution_error : list[float, float], distribution_length : list[float, float], freeze_property :bool=False):
+    def swap_basis_gate_distribution(self, old_gate : str, new_gate : str, distribution_error : "list[float, float]", distribution_length : "list[float, float]", freeze_property :bool=False):
         """Change the basis gates from `old_gate` to `new_gate` based on distributions for `error_vals` and `length_vals`.
         
         Args:
@@ -974,7 +974,7 @@ class BackendSpec:
         self.add_basis_gate_distribution(new_gate, distribution_error, distribution_length, freeze_property)
 
 
-    def swap_basis_gate_numeric(self, old_gate : str, new_gate : str, error_vals : list[float], length_vals : list[float], freeze_property: bool = False):
+    def swap_basis_gate_numeric(self, old_gate : str, new_gate : str, error_vals : "list[float]", length_vals : "list[float]", freeze_property: bool = False):
         """Change the basis gates from `old_gate` to `new_gate` based on directly inputted values for `error_vals` and `length_vals`.
         
         Args:
@@ -1026,7 +1026,7 @@ class BackendSpec:
         self._basis_gates.append(new_gate)
 
 
-    def swap_2q_basis_gate_distribution(self, old_gate : str, new_gate : str, distribution_error : list[float, float], distribution_length : list[float, float], freeze_property: bool = False):
+    def swap_2q_basis_gate_distribution(self, old_gate : str, new_gate : str, distribution_error : "list[float, float]", distribution_length : "list[float, float]", freeze_property: bool = False):
         """Applies a new 2-qubit gate with a specified distribution for the `gate_error`s and the `gate_length`s.
     
         Args:
@@ -1075,7 +1075,7 @@ class BackendSpec:
         self._basis_gates.append(new_gate)
 
     
-    def swap_2q_basis_gate_numeric(self, old_gate : str, new_gate : str, gate_error : list[float], gate_length : list[float], freeze_property:bool=False):
+    def swap_2q_basis_gate_numeric(self, old_gate : str, new_gate : str, gate_error : "list[float]", gate_length : "list[float]", freeze_property:bool=False):
         """Changes the basis gates of a 2-qubit system from the `old_gate`s to the `new_gate`s, while also applying the required `gate_errors`
         with the respective `gate_length`s.
     
@@ -1137,7 +1137,7 @@ class BackendSpec:
         self._frozen_gate_properties = gate_frozen
 
 
-    def _apply_freeze(self, dfs : pd.DataFrame) -> list[np.ndarray, np.ndarray]:
+    def _apply_freeze(self, dfs : pd.DataFrame) -> "list[np.ndarray, np.ndarray]":
         """
         Keeps frozen properties static while sampling for unfrozen properties
     
@@ -1162,7 +1162,7 @@ class BackendSpec:
 
 
 ### Samplers
-    def _sample_props(self) -> list[np.ndarray, np.ndarray]:
+    def _sample_props(self) -> "list[np.ndarray, np.ndarray]":
         """Generates DataFrames from samples for qubits and gates.
         
         Returns:
