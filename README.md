@@ -2,7 +2,7 @@
 
 ## Overview
 
-Welcome to the Qiskit BackendSpec Framework! This project provides a versatile framework for generating Qiskit backends, specifically designed for running quantum circuits on IBM Quantum computers. The primary goal is to empower users to create customizable backends with features such as qubit count, coupling map configuration, qubit error rates, and more.
+Welcome to the Qiskit BackendSpec Framework! This project provides a versatile framework for generating Qiskit backends, specifically designed for testing the transpilation of quantum circuits on experimental hardware. The primary goal is to empower users to create customizable backends with features such as qubit count, coupling map configuration, qubit error rates, and more.
 
 ## Features
 
