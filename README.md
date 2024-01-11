@@ -30,3 +30,23 @@ Clone the repository to your local machine:
 ```bash
 git clone https://github.com/your-username/qiskit_backendspec.git
 cd qiskit_backendspec
+```
+### Usage
+1. Import the BackendSpec class from the framework:
+```
+from qiskit_backendspec import BackendSpec
+```
+2. Create an instance of the BackendSpec class:
+```
+backend_spec = BackendSpec()
+```
+3. Customize the backend features by configuring parameters such as qubit count, coupling map, and error rates:
+```
+backend_spec.set_qubit_property(0, 't1', 3.7) #set the t1 time for qubit 0
+backend_spec.set_coupling_map(CouplingMap([[0, 1], [1, 2], [2, 3], [3, 4]])) #set coupling map
+backend_spec.increase_qubits(3, 'square') #increase number of qubits
+```
+4. Generate the qiskit backend object:
+```
+custom_backend_spec = backend_spec.new_backend()
+```
