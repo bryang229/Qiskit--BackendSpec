@@ -48,5 +48,10 @@ backend_spec.increase_qubits(3, 'square') #increase number of qubits
 ```
 4. Generate the qiskit backend object:
 ```
-custom_backend_spec = backend_spec.new_backend()
+custom_backend = backend_spec.new_backend()
+```
+5. Transpile the generated backend
+```
+circuit = QuantumCircuit(5)
+transpiled_circuit = transpile(circuit, custom_backend)
 ```
