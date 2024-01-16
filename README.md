@@ -6,9 +6,9 @@ Welcome to the Qiskit BackendSpec Framework! This project provides a versatile f
 
 ## Features
 
-- **Customizable Backends**: Generate Qiskit backends tailored to your specific requirements by configuring various parameters.
+- **Customizable BackendSpec**: Generate a Qiskit BackendSpec object, which serves as a template for the generation of Backend objects. The user is able to modify the features of the BackendSpec and sample from this data for the generation of new backends.
   
-- **Qubit Count Configuration**: Define the number of qubits for the generated backend, allowing you to simulate quantum circuits of different sizes.
+- **Qubit Count Configuration**: Define the number of qubits for the backend, allowing you to simulate quantum circuits of different sizes.
 
 - **Coupling Map Configuration**: Specify the coupling map for the backend, enabling you to model the connectivity of physical qubits on real quantum devices.
 
