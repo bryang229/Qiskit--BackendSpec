@@ -2,7 +2,7 @@
 
 ## Overview
 
-Welcome to the Qiskit BackendSpec Framework! This project provides a versatile framework for generating Qiskit backends, specifically designed for testing the transpilation of quantum circuits on experimental hardware. The primary goal is to empower users to create customizable backends with features such as qubit count, coupling map configuration, qubit error rates, and more.
+Welcome to the Qiskit BackendSpec Framework! This project provides a versatile framework for generating Qiskit backends, specifically designed for testing the transpilation of quantum circuits on experimental backend configurations. The primary goal is to empower users to create customizable backends with experimental features such as modified qubit count, unique coupling map configuration, modified qubit error rates, and more.
 
 ## Features
 
@@ -10,11 +10,9 @@ Welcome to the Qiskit BackendSpec Framework! This project provides a versatile f
   
 - **Qubit Count Configuration**: Define the number of qubits for the backend, allowing you to simulate quantum circuits of different sizes.
 
-- **Coupling Map Configuration**: Specify the coupling map for the backend, enabling you to model the connectivity of physical qubits on real quantum devices.
+- **Coupling Map Configuration**: Specify the coupling map for the backend, enabling you to model the connectivity of physical qubits on real or hypothetical quantum devices.
 
-- **Qubit Error Rates**: Set custom error rates for individual qubits, simulating realistic noise conditions for more accurate simulations.
-
-- **Backend Metadata**: Include metadata such as backend name, version, and additional information to help users understand the characteristics of the generated backend.
+- **Qubit Error Rates**: Set custom error rates for individual qubits.
 
 ## Getting Started
 
